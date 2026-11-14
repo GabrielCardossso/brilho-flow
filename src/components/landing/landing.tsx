@@ -284,7 +284,7 @@ export function Landing() {
                     <p className="mt-6 text-sm font-semibold">
                       {destaque ? 'Tudo do Básico, mais:' : 'Inclui:'}
                     </p>
-                    <ul className="mt-3 space-y-2.5">
+                    <ul className="mt-3 flex-1 space-y-2.5">
                       {exibidos.map((recurso: Recurso) => (
                         <li key={recurso} className="flex items-start gap-2.5 text-sm">
                           <Check

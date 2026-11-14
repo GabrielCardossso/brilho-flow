@@ -604,6 +604,8 @@
 }
 .lp-plano {
   position: relative;
+  display: flex;
+  flex-direction: column;
   padding: 1.8rem;
   border-radius: 1.5rem;
   background: var(--superficie-1);

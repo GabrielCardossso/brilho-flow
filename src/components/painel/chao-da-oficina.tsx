@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarClock, UserRound } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '@/components/ui/botao';
@@ -199,7 +199,7 @@ export function ChaoDaOficina() {
                     </>
                   ) : (
                     <>
-                      <UserRound className="mx-auto size-6 text-[var(--tinta-tenue)]" aria-hidden />
+                      <b className="text-[var(--tinta-suave)]">Livre</b>
                       <small>sem carro agora</small>
                     </>
                   )}

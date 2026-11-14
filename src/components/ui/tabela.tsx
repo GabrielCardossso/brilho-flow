@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function Tabela({ className, ...resto }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full touch-pan-x overflow-x-auto rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+    <div className="w-full max-h-[calc(100dvh-13rem)] overflow-auto rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]">
       <table className={cn('w-full border-collapse text-sm', className)} {...resto} />
     </div>
   );
@@ -43,7 +43,8 @@ export function Coluna({
     <th
       scope="col"
       className={cn(
-        'rotulo-tecnico px-4 py-2.5 text-left',
+        // Cabeçalho fixo: os dados rolam por baixo e as colunas continuam à vista.
+        'rotulo-tecnico sticky top-0 z-10 whitespace-nowrap border-r border-[var(--borda)] bg-[var(--superficie-2)] px-4 py-2.5 text-left shadow-[inset_0_-1px_0_var(--borda)] last:border-r-0',
         numerica ? 'text-right' : undefined,
         className,
       )}
@@ -60,7 +61,7 @@ export function Celula({
   return (
     <td
       className={cn(
-        'px-4 py-3 align-middle text-[var(--tinta)]',
+        'border-r border-[var(--borda)] px-4 py-3 align-middle text-[var(--tinta)] last:border-r-0',
         numerica ? 'numerico whitespace-nowrap text-right' : undefined,
         className,
       )}
