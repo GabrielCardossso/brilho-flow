@@ -1,7 +1,7 @@
 import { and, count, desc, eq, isNotNull, max, ne, sum } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
-import { agendamento, cliente, receita, veiculo } from '@/db/schema';
+import { agendamento, cliente, formaPagamento, receita, veiculo } from '@/db/schema';
 import {
   classificarRelacionamento,
   linkMapa,
@@ -206,25 +206,40 @@ export async function obterCliente(
       descricao: receita.descricao,
       valor: receita.valor,
       dataRecebimento: receita.dataRecebimento,
+      formaPagamento: formaPagamento.nome,
     })
     .from(receita)
     .innerJoin(agendamento, eq(agendamento.id, receita.agendamentoId))
+    .leftJoin(formaPagamento, eq(formaPagamento.id, receita.formaPagamentoId))
     .where(and(eq(agendamento.clienteId, id), eq(receita.empresaId, contexto.empresaId)))
     .orderBy(desc(receita.dataRecebimento))
     .limit(50);
 
-  const concluidos = historicoBruto.filter((h) => h.status === 'CONCLUIDO');
-  const valorTotalGasto = Dinheiro.somar(...concluidos.map((h) => h.total), '0');
-  const ultimo = concluidos[0]?.dataHora ?? null;
+  // Metricas sobre TODO o historico concluido, nao so sobre as 50 linhas
+  // exibidas: a lista e paginada, o agregado nao pode ser.
+  const [metricas] = await db
+    .select({ total: count(), gasto: sum(agendamento.total), ultimo: max(agendamento.dataHora) })
+    .from(agendamento)
+    .where(
+      and(
+        eq(agendamento.clienteId, id),
+        eq(agendamento.empresaId, contexto.empresaId),
+        eq(agendamento.status, 'CONCLUIDO'),
+      ),
+    );
+
+  const totalConcluidos = Number(metricas?.total ?? 0);
+  const valorTotalGasto = Dinheiro.de(metricas?.gasto ?? '0');
+  const ultimo = metricas?.ultimo ?? null;
   const ultimoIso = ultimo === null ? null : new Date(ultimo).toISOString();
 
   return ok({
     cliente: registro,
     relacionamento: classificarRelacionamento(ultimoIso),
-    totalAtendimentos: concluidos.length,
+    totalAtendimentos: totalConcluidos,
     valorTotalGasto,
     ticketMedio:
-      concluidos.length > 0 ? Dinheiro.dividir(valorTotalGasto, concluidos.length) : Dinheiro.zero,
+      totalConcluidos > 0 ? Dinheiro.dividir(valorTotalGasto, totalConcluidos) : Dinheiro.zero,
     ultimoAtendimento: ultimoIso,
     whatsapp: linkWhatsApp(registro.telefone),
     mapa: linkMapa(registro),
@@ -242,7 +257,7 @@ export async function obterCliente(
       descricao: f.descricao,
       valor: f.valor,
       dataRecebimento: f.dataRecebimento,
-      formaPagamento: null,
+      formaPagamento: f.formaPagamento,
     })),
   });
 }
@@ -494,7 +509,15 @@ export async function contarPorRelacionamento(contexto: Contexto) {
       ultimo: max(agendamento.dataHora),
     })
     .from(agendamento)
-    .where(and(eq(agendamento.empresaId, contexto.empresaId), eq(agendamento.status, 'CONCLUIDO')))
+    .innerJoin(cliente, eq(cliente.id, agendamento.clienteId))
+    .where(
+      and(
+        eq(agendamento.empresaId, contexto.empresaId),
+        eq(agendamento.status, 'CONCLUIDO'),
+        // So clientes ativos: o total abaixo tambem conta apenas ativos.
+        eq(cliente.ativo, true),
+      ),
+    )
     .groupBy(agendamento.clienteId);
 
   const [{ total = 0 } = { total: 0 }] = await db
