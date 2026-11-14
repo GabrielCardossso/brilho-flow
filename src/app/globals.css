@@ -28,11 +28,11 @@
 
 :root {
   /* Acento — sobrescrito pelo tema do tenant no servidor. */
-  --acento: #ff5a1f;
-  --acento-rgb: 255 90 31;
-  --acento-texto: #000000;
-  --acento-escuro: #ff5a1f;
-  --acento-claro: #c2410c;
+  --acento: #2f6df6;
+  --acento-rgb: 47 109 246;
+  --acento-texto: #ffffff;
+  --acento-escuro: #6b9bff;
+  --acento-claro: #1d4ed8;
 
   /* Tokens de movimento, usados por todo o sistema (uma cadência só). */
   --duracao-curta: 140ms;

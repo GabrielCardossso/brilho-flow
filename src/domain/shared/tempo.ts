@@ -91,27 +91,27 @@ export function haSobreposicao(
 // --------------------------------------------------------------------------
 
 export function formatarData(valor: EntradaData | null | undefined): string {
-  if (valor === null || valor === undefined) return '—';
+  if (valor === null || valor === undefined) return '-';
   return m(valor).format('DD/MM/YYYY');
 }
 
 export function formatarDataHora(valor: EntradaData | null | undefined): string {
-  if (valor === null || valor === undefined) return '—';
+  if (valor === null || valor === undefined) return '-';
   return m(valor).format('DD/MM/YYYY [às] HH:mm');
 }
 
 export function formatarHora(valor: EntradaData | null | undefined): string {
-  if (valor === null || valor === undefined) return '—';
+  if (valor === null || valor === undefined) return '-';
   return m(valor).format('HH:mm');
 }
 
 export function formatarDataExtenso(valor: EntradaData | null | undefined): string {
-  if (valor === null || valor === undefined) return '—';
+  if (valor === null || valor === undefined) return '-';
   return m(valor).format('dddd, D [de] MMMM [de] YYYY');
 }
 
 export function formatarRelativo(valor: EntradaData | null | undefined): string {
-  if (valor === null || valor === undefined) return '—';
+  if (valor === null || valor === undefined) return '-';
   return m(valor).fromNow();
 }
 

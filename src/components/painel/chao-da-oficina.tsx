@@ -207,7 +207,7 @@ export function ChaoDaOficina() {
               </div>
 
               <div className="mx-auto" style={{ opacity: atual === undefined ? 0.5 : 1 }}>
-                {quem !== undefined ? <Placa valor={quem.veiculoPlaca} /> : <Placa valor="— — —" />}
+                {quem !== undefined ? <Placa valor={quem.veiculoPlaca} /> : <Placa valor="- - -" />}
               </div>
 
               <div className="chao-nome">
@@ -231,7 +231,7 @@ export function ChaoDaOficina() {
                 <span>
                   {atual === undefined
                     ? quem === undefined
-                      ? '—'
+                      ? '-'
                       : formatarHora(quem.dataHora)
                     : proximo === undefined
                       ? 'Nada agendado'

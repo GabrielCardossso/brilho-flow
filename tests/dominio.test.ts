@@ -469,7 +469,7 @@ describe('períodos de relatório', () => {
 describe('tema', () => {
   it('ignora personalização fora do plano', () => {
     const tema = resolverTema({ cor: 'turbina', hex: '#06b6d4', modo: 'claro' }, false);
-    expect(tema.acento).toBe('sinal');
+    expect(tema.acento).toBe('azul');
     expect(tema.modo).toBe('claro');
   });
 
@@ -480,7 +480,7 @@ describe('tema', () => {
   });
 
   it('cai no padrão diante de valor inválido', () => {
-    expect(resolverTema({ cor: 'roxo-neon' }, true).acento).toBe('sinal');
+    expect(resolverTema({ cor: 'roxo-neon' }, true).acento).toBe('azul');
   });
 
   it('ajusta o acento até atingir contraste AA', () => {

@@ -203,7 +203,7 @@ export function PainelFinanceiro() {
                 valor={formatarMoeda(indicadores?.lucroMes ?? 0)}
                 detalhe={
                   indicadores?.margem === null || indicadores === undefined
-                    ? 'Margem —'
+                    ? 'Sem margem'
                     : `Margem de ${indicadores.margem}%`
                 }
                 tom={Number(indicadores?.lucroMes ?? 0) >= 0 ? 'positivo' : 'critico'}

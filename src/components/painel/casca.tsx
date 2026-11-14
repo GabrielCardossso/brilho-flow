@@ -13,7 +13,6 @@ import {
   Moon,
   ScrollText,
   Settings,
-  Sparkles,
   Sun,
   Users,
   Wallet,
@@ -342,19 +341,12 @@ export function Casca({
           >
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
             <span>
-              Assinatura em atraso há {diasAtraso} {diasAtraso === 1 ? 'dia' : 'dias'} — vencimento
+              Assinatura em atraso há {diasAtraso} {diasAtraso === 1 ? 'dia' : 'dias'}. Vencimento
               em {formatarData(proximoVencimento)}.
             </span>
             <Etiqueta tom="atencao" className="ml-auto">
               Regularize para manter o acesso
             </Etiqueta>
-          </div>
-        ) : null}
-
-        {ehSuperAdmin ? (
-          <div className="flex items-center gap-2 border-b border-[var(--informativo)]/25 bg-[var(--informativo-fraco)] px-4 py-2 text-xs text-[var(--informativo)] sm:px-6">
-            <Sparkles className="size-3.5 shrink-0" aria-hidden />
-            Sessão da plataforma: você enxerga recursos de todos os planos.
           </div>
         ) : null}
 

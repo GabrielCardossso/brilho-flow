@@ -11,6 +11,7 @@ export const CHAVE_SESSAO_ATIVA = 'sessao.inatividade.ativa';
 export const CHAVE_SESSAO_MINUTOS = 'sessao.inatividade.minutos';
 
 export const ACENTOS = [
+  'azul',
   'sinal',
   'tacometro',
   'turbina',
@@ -31,6 +32,7 @@ interface DefinicaoAcento {
 }
 
 export const CATALOGO_ACENTOS: Readonly<Record<Acento, DefinicaoAcento>> = {
+  azul: { rotulo: 'Azul', descricao: 'Azul de oficina', hex: '#2f6df6' },
   sinal: { rotulo: 'Sinal', descricao: 'Laranja de sinalização', hex: '#ff5a1f' },
   tacometro: { rotulo: 'Tacômetro', descricao: 'Âmbar de instrumentação', hex: '#f59e0b' },
   turbina: { rotulo: 'Turbina', descricao: 'Ciano de HUD', hex: '#06b6d4' },
@@ -40,10 +42,10 @@ export const CATALOGO_ACENTOS: Readonly<Record<Acento, DefinicaoAcento>> = {
   cobalto: { rotulo: 'Cobalto', descricao: 'Azul de painel digital', hex: '#3b82f6' },
   violeta: { rotulo: 'Violeta', descricao: 'Roxo de iluminação ambiente', hex: '#8b5cf6' },
   titanio: { rotulo: 'Titânio', descricao: 'Grafite metálico', hex: '#94a3b8' },
-  personalizado: { rotulo: 'Personalizado', descricao: 'Cor da sua marca', hex: '#ff5a1f' },
+  personalizado: { rotulo: 'Personalizado', descricao: 'Cor da sua marca', hex: '#2f6df6' },
 };
 
-export const ACENTO_PADRAO: Acento = 'sinal';
+export const ACENTO_PADRAO: Acento = 'azul';
 export const HEX_PADRAO = CATALOGO_ACENTOS[ACENTO_PADRAO].hex;
 
 export const MODOS = ['claro', 'escuro', 'sistema'] as const;

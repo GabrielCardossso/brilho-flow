@@ -90,7 +90,7 @@ export function formatarCpfCnpj(valor: string | null | undefined): string {
   if (digitos.length === 14) {
     return `${digitos.slice(0, 2)}.${digitos.slice(2, 5)}.${digitos.slice(5, 8)}/${digitos.slice(8, 12)}-${digitos.slice(12)}`;
   }
-  return valor ?? '—';
+  return valor ?? '-';
 }
 
 export function formatarTelefone(valor: string | null | undefined): string {
@@ -101,17 +101,17 @@ export function formatarTelefone(valor: string | null | undefined): string {
   if (digitos.length === 10) {
     return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
   }
-  return valor ?? '—';
+  return valor ?? '-';
 }
 
 export function formatarCep(valor: string | null | undefined): string {
   const digitos = somenteDigitos(valor);
-  if (digitos.length !== 8) return valor ?? '—';
+  if (digitos.length !== 8) return valor ?? '-';
   return `${digitos.slice(0, 5)}-${digitos.slice(5)}`;
 }
 
 export function formatarPlaca(valor: string | null | undefined): string {
   const placa = normalizarPlaca(valor);
   if (PLACA_ANTIGA.test(placa)) return `${placa.slice(0, 3)}-${placa.slice(3)}`;
-  return placa || '—';
+  return placa || '-';
 }

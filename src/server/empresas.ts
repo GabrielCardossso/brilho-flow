@@ -209,7 +209,7 @@ export async function criarEmpresa(
     empresaId: criada.id,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'EMPRESA_CRIADA',
-    detalhes: `${dados.nomeFantasia} — plano ${dados.plano}`,
+    detalhes: `${dados.nomeFantasia}: plano ${dados.plano}`,
   });
 
   return ok({ id: criada.id });

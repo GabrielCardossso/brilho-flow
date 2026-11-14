@@ -6,7 +6,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Brilhoflow — gestão para estética automotiva',
+    default: 'Brilhoflow: gestão para estética automotiva',
     template: '%s · Brilhoflow',
   },
   description:
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'pt_BR',
     siteName: 'Brilhoflow',
-    title: 'Brilhoflow — gestão para estética automotiva',
+    title: 'Brilhoflow: gestão para estética automotiva',
     description:
       'Agenda, clientes, estoque, financeiro e relatórios em um só painel. Feito para quem trabalha com carro.',
   },

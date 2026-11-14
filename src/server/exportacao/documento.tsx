@@ -108,7 +108,7 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
 
   return (
     <Document
-      title={`Relatório Brilhoflow — ${relatorio.empresa}`}
+      title={`Relatório Brilhoflow: ${relatorio.empresa}`}
       author="Brilhoflow"
       language="pt-BR"
     >
@@ -147,7 +147,7 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
           <View style={estilos.indicador}>
             <Text style={estilos.rotuloIndicador}>Margem</Text>
             <Text style={estilos.valorIndicador}>
-              {relatorio.resumo.margem === null ? '—' : `${relatorio.resumo.margem}%`}
+              {relatorio.resumo.margem === null ? '-' : `${relatorio.resumo.margem}%`}
             </Text>
           </View>
         </View>

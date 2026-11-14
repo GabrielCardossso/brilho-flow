@@ -198,8 +198,8 @@ async function criarDemonstracao(
       .returning({ id: usuario.id, nome: usuario.nome });
 
     await tx.insert(configuracao).values([
-      { empresaId: demo.id, chave: 'tema.cor', valor: 'turbina' },
-      { empresaId: demo.id, chave: 'tema.cor.hex', valor: '#06b6d4' },
+      { empresaId: demo.id, chave: 'tema.cor', valor: 'azul' },
+      { empresaId: demo.id, chave: 'tema.cor.hex', valor: '#2f6df6' },
       { empresaId: demo.id, chave: 'tema.modo', valor: 'escuro' },
       { empresaId: demo.id, chave: 'sessao.inatividade.ativa', valor: 'false' },
       { empresaId: demo.id, chave: 'sessao.inatividade.minutos', valor: '30' },
@@ -587,7 +587,7 @@ async function criarDemonstracao(
         empresaId: demo.id,
         agendamentoId: registro.id,
         formaPagamentoId: historico[indice]?.forma ?? pagamentoPorNome('PIX').id,
-        descricao: `Atendimento ${registro.id} — ${historico[indice]?.servicos.map((item) => item.nome).join(' + ')}`,
+        descricao: `Atendimento ${registro.id}: ${historico[indice]?.servicos.map((item) => item.nome).join(' + ')}`,
         valor: registro.total,
         dataRecebimento: dataISO(registro.dataHora),
       })),
@@ -643,7 +643,7 @@ async function criarDemonstracao(
           origem: 'MANUAL' as const,
           quantidade: produtoIndice === 0 ? '5000' : produtoIndice === 4 ? '1000' : '2500',
           valorFinanceiro: produtoIndice === 0 ? '99.90' : produtoIndice === 4 ? '89.90' : '109.90',
-          motivo: `Reposição programada — ${dataISO(data)}`,
+          motivo: `Reposição programada: ${dataISO(data)}`,
           ocorridoEm: data,
         }));
       }).flat(),
@@ -657,7 +657,7 @@ async function criarDemonstracao(
     ].map((nomes, indice) => {
       const lista = nomes.map(servicoPorNome);
       const subtotal = lista.reduce((total, item) => total + Number(item.preco), 0);
-      return {
+      return { lista, linha: {
         empresaId: demo.id,
         clienteId: clientes[(indice + 4) % clientes.length]?.id ?? 0,
         veiculoId: veiculos[(indice + 5) % veiculos.length]?.id ?? 0,
@@ -670,9 +670,67 @@ async function criarDemonstracao(
         desconto: '0.00',
         total: decimal(subtotal),
         pago: false,
-      };
+      } };
     });
-    await tx.insert(agendamento).values(futuros);
+    const futurosInseridos = await tx
+      .insert(agendamento)
+      .values(futuros.map((item) => item.linha))
+      .returning({ id: agendamento.id });
+    await tx.insert(agendamentoServico).values(
+      futurosInseridos.flatMap((registro, indice) =>
+        (futuros[indice]?.lista ?? []).map((servico) => ({
+          empresaId: demo.id,
+          agendamentoId: registro.id,
+          servicoId: servico.id,
+          precoUnitario: servico.preco,
+          tempoEstimadoMinutos: String(servico.tempoEstimadoMinutos),
+        })),
+      ),
+    );
+
+    // Atendimentos de hoje, relativos ao momento do seed, para o painel nascer
+    // com o chão da oficina preenchido: um concluído, dois em andamento e dois por vir.
+    const minuto = 60 * 1000;
+    const hoje: Array<{ nomes: string[]; deslocamento: number; status: 'CONCLUIDO' | 'EM_ANDAMENTO' | 'AGENDADO' }> = [
+      { nomes: ['Lavagem premium SUV'], deslocamento: -200, status: 'CONCLUIDO' },
+      { nomes: ['Polimento técnico 2 etapas'], deslocamento: -70, status: 'EM_ANDAMENTO' },
+      { nomes: ['Higienização interna'], deslocamento: -25, status: 'EM_ANDAMENTO' },
+      { nomes: ['Hidratação de couro'], deslocamento: 50, status: 'AGENDADO' },
+      { nomes: ['Revitalização de plásticos'], deslocamento: 130, status: 'AGENDADO' },
+    ];
+    const linhasHoje = hoje.map((item, indice) => {
+        const lista = item.nomes.map(servicoPorNome);
+        const subtotal = lista.reduce((total, servico) => total + Number(servico.preco), 0);
+        return { lista, linha: {
+          empresaId: demo.id,
+          clienteId: clientes[(indice + 12) % clientes.length]?.id ?? 0,
+          veiculoId: veiculos[(indice + 13) % veiculos.length]?.id ?? 0,
+          responsavelId: equipe[1 + (indice % (equipe.length - 1))]?.id ?? null,
+          dataHora: new Date(Date.now() + item.deslocamento * minuto),
+          duracaoMinutos: String(lista.reduce((total, servico) => total + servico.tempoEstimadoMinutos, 0)),
+          status: item.status,
+          observacoes: 'Atendimento de demonstração para o dia de hoje.',
+          subtotal: decimal(subtotal),
+          desconto: '0.00',
+          total: decimal(subtotal),
+          pago: false,
+        } };
+      });
+    const hojeInseridos = await tx
+      .insert(agendamento)
+      .values(linhasHoje.map((item) => item.linha))
+      .returning({ id: agendamento.id });
+    await tx.insert(agendamentoServico).values(
+      hojeInseridos.flatMap((registro, indice) =>
+        (linhasHoje[indice]?.lista ?? []).map((servico) => ({
+          empresaId: demo.id,
+          agendamentoId: registro.id,
+          servicoId: servico.id,
+          precoUnitario: servico.preco,
+          tempoEstimadoMinutos: String(servico.tempoEstimadoMinutos),
+        })),
+      ),
+    );
 
     await tx.insert(agendamento).values(
       [0, 2, 4].map((mesesAtras, indice) => ({
@@ -711,7 +769,7 @@ async function principal(): Promise<void> {
     const senhaDemo = await criarDemonstracao(db);
 
     if (senhaDemo !== null) {
-      console.warn('✓ Empresa de demonstração criada: Lumen Auto Studio.');
+      console.warn('Empresa de demonstração criada: Lumen Auto Studio.');
       console.warn(`  Acesso: ${EMAIL_DEMO} · senha ${senhaDemo}`);
     } else {
       console.warn('› A empresa de demonstração já existe. Nenhum dado foi duplicado.');

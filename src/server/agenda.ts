@@ -454,7 +454,7 @@ export async function criarAgendamento(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'AGENDAMENTO_CRIADO',
-    detalhes: `Agendamento ${criado.id} — ${servicosSelecionados.map((s) => s.nome).join(', ')}`,
+    detalhes: `Agendamento ${criado.id}: ${servicosSelecionados.map((s) => s.nome).join(', ')}`,
   });
 
   return ok({ id: criado.id });
@@ -527,7 +527,7 @@ export async function mudarStatus(
     acao: acao === 'INICIAR' ? 'AGENDAMENTO_INICIADO' : 'AGENDAMENTO_CANCELADO',
     detalhes:
       resultado.parcelasRemovidas > 0
-        ? `Agendamento ${id} — ${resultado.parcelasRemovidas} parcela(s) em aberto removida(s)`
+        ? `Agendamento ${id}: ${resultado.parcelasRemovidas} parcela(s) em aberto removida(s)`
         : `Agendamento ${id}`,
   });
 

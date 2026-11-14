@@ -257,7 +257,7 @@ export function ListaDeClientes() {
                     <Celula>
                       <span className="text-sm text-[var(--tinta-suave)]">
                         {cliente.ultimoAtendimento === null
-                          ? '—'
+                          ? '-'
                           : formatarData(cliente.ultimoAtendimento)}
                       </span>
                     </Celula>

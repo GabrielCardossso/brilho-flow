@@ -18,7 +18,7 @@ async function principal(): Promise<void> {
 
   console.warn('› Aplicando migrations...');
   await migrate(banco, { migrationsFolder: './drizzle' });
-  console.warn('✓ Banco atualizado.');
+  console.warn('Banco atualizado.');
 
   await conexao.end();
 }

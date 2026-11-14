@@ -23,6 +23,10 @@ export function Simbolo({ className }: { className?: string | undefined }) {
   );
 }
 
+/**
+ * Assinatura do Brilhoflow. Nunca junta o símbolo e o nome: ou aparece só o
+ * nome (padrão) ou só o símbolo (`compacta`, para espaços pequenos e favicon).
+ */
 export function Marca({
   className,
   compacta = false,
@@ -30,14 +34,15 @@ export function Marca({
   className?: string | undefined;
   compacta?: boolean | undefined;
 }) {
+  if (compacta) return <Simbolo className={cn('size-8', className)} />;
   return (
-    <span className={cn('flex items-center gap-2', className)}>
-      <Simbolo className={compacta ? 'size-7' : 'size-9'} />
-      {!compacta ? (
-        <span className="font-[family-name:var(--font-marca)] text-[1.4rem] font-semibold leading-none tracking-[-0.03em] text-[var(--tinta)]">
-          Brilho<span className="text-[var(--acento-ativo)]">flow</span>
-        </span>
-      ) : null}
+    <span
+      className={cn(
+        'font-[family-name:var(--font-marca)] text-[1.5rem] font-semibold leading-none tracking-[-0.03em] text-[var(--tinta)]',
+        className,
+      )}
+    >
+      Brilho<span className="text-[var(--acento-ativo)]">flow</span>
     </span>
   );
 }

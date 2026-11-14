@@ -169,7 +169,7 @@ export function FichaDoCliente({ id }: { id: number }) {
         <Indicador rotulo="Ticket médio" valor={formatarMoeda(data.ticketMedio)} />
         <Indicador
           rotulo="Último atendimento"
-          valor={data.ultimoAtendimento === null ? '—' : formatarData(data.ultimoAtendimento)}
+          valor={data.ultimoAtendimento === null ? '-' : formatarData(data.ultimoAtendimento)}
         />
       </section>
 
@@ -262,7 +262,7 @@ export function FichaDoCliente({ id }: { id: number }) {
             </div>
             <div>
               <p className="rotulo-tecnico">E-mail</p>
-              <p className="mt-0.5 break-all text-[var(--tinta)]">{cliente.email ?? '—'}</p>
+              <p className="mt-0.5 break-all text-[var(--tinta)]">{cliente.email ?? '-'}</p>
             </div>
             <div>
               <p className="rotulo-tecnico">Endereço</p>

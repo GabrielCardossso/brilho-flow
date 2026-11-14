@@ -301,7 +301,7 @@ export async function criarCliente(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'CLIENTE_CRIADO',
-    detalhes: `Cliente ${criado.id} — ${dados.nome}`,
+    detalhes: `Cliente ${criado.id}: ${dados.nome}`,
   });
 
   return ok({ id: criado.id });
@@ -333,7 +333,7 @@ export async function atualizarCliente(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'CLIENTE_ATUALIZADO',
-    detalhes: `Cliente ${id} — ${dados.nome}`,
+    detalhes: `Cliente ${id}: ${dados.nome}`,
   });
 
   return ok({ id });
@@ -427,7 +427,7 @@ export async function criarVeiculo(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'VEICULO_CRIADO',
-    detalhes: `Veículo ${criado.id} — ${dados.placa}`,
+    detalhes: `Veículo ${criado.id}: ${dados.placa}`,
   });
 
   return ok({ id: criado.id });
@@ -459,7 +459,7 @@ export async function atualizarVeiculo(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'VEICULO_ATUALIZADO',
-    detalhes: `Veículo ${id} — ${dados.placa}`,
+    detalhes: `Veículo ${id}: ${dados.placa}`,
   });
 
   return ok({ id });

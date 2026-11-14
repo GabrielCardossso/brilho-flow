@@ -310,13 +310,13 @@ export function CentralDeConfiguracoes() {
               <div>
                 <p className="rotulo-tecnico">Telefone</p>
                 <p className="numerico mt-0.5 text-[var(--tinta)]">
-                  {data.empresa.telefone === null ? '—' : formatarTelefone(data.empresa.telefone)}
+                  {data.empresa.telefone === null ? '-' : formatarTelefone(data.empresa.telefone)}
                 </p>
               </div>
             </div>
             <div>
               <p className="rotulo-tecnico">E-mail</p>
-              <p className="mt-0.5 break-all text-[var(--tinta)]">{data.empresa.email ?? '—'}</p>
+              <p className="mt-0.5 break-all text-[var(--tinta)]">{data.empresa.email ?? '-'}</p>
             </div>
           </CartaoCorpo>
         </Cartao>
@@ -504,7 +504,7 @@ export function CentralDeConfiguracoes() {
                   {data.acessos.slice(0, 5).map((acesso) => (
                     <li key={acesso.id} className="flex justify-between gap-3">
                       <span className="min-w-0 truncate text-[var(--tinta-suave)]">
-                        {acesso.usuarioNome} · {acesso.navegador ?? '—'}
+                        {acesso.usuarioNome} · {acesso.navegador ?? '-'}
                       </span>
                       <span className="numerico shrink-0 text-[var(--tinta-tenue)]">
                         {formatarDataHora(acesso.ocorridoEm)}

@@ -127,7 +127,7 @@ export async function criarServico(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'SERVICO_CRIADO',
-    detalhes: `Serviço ${criado.id} — ${dados.nome}`,
+    detalhes: `Serviço ${criado.id}: ${dados.nome}`,
   });
 
   return ok({ id: criado.id });
@@ -158,7 +158,7 @@ export async function atualizarServico(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'SERVICO_ATUALIZADO',
-    detalhes: `Serviço ${id} — ${dados.nome}`,
+    detalhes: `Serviço ${id}: ${dados.nome}`,
   });
 
   return ok({ id });

@@ -7,7 +7,7 @@ import {
   CircleDollarSign,
   Menu,
   PackageCheck,
-  Sparkles,
+  TrendingUp,
   Users,
   X,
   type LucideIcon,
@@ -332,8 +332,8 @@ export function Landing() {
 
       <footer className="border-t border-[var(--borda)] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-4 text-sm text-[var(--tinta-suave)] sm:flex-row sm:items-center sm:justify-between">
-          <Marca compacta />
-          <p>Brilhoflow · gestão para estética automotiva.</p>
+          <Marca />
+          <p>Gestão para estética automotiva.</p>
           <Link href="/suporte" className="font-medium hover:text-[var(--tinta)]">
             Falar com o suporte
           </Link>
@@ -369,54 +369,43 @@ function Passo({
 }
 
 // ---------------------------------------------------------------------------
-// Palco: a pintura riscada que o visitante poli com o mouse.
+// Palco: a pintura riscada que o visitante poli com o mouse ou com o dedo.
 // ---------------------------------------------------------------------------
 
-const DICA_INICIAL = 'Passe o mouse para polir a pintura';
-
 /**
- * O painel fica escondido sob uma pintura riscada (canvas). O mouse é a
- * politriz: cada passada apaga os riscos e revela a interface. Uma
- * demonstração automática ensina o gesto; "Revelar tudo" e movimento reduzido
- * pulam direto para o resultado, e o painel decorativo nunca entra na árvore
- * de acessibilidade (a descrição vem do `aria-label`).
+ * O painel fica escondido sob uma pintura riscada (canvas). A passada do mouse
+ * ou do dedo apaga os riscos e revela a interface. O polimento só termina
+ * quando toda a superfície foi realmente passada. "Revelar tudo" e movimento
+ * reduzido mostram direto o resultado, e o painel decorativo fica fora da
+ * árvore de acessibilidade.
  */
 function PalcoPolido() {
   const palcoRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const padRef = useRef<HTMLDivElement>(null);
-  const pctRef = useRef<HTMLSpanElement>(null);
-  const barraRef = useRef<HTMLElement>(null);
   const revelarRef = useRef<() => void>(() => undefined);
   const [polido, setPolido] = useState(false);
   const [pronto, setPronto] = useState(false);
-  const [ativo, setAtivo] = useState(false);
-  const [dica, setDica] = useState(DICA_INICIAL);
 
   useEffect(() => {
     const palco = palcoRef.current;
     const canvas = canvasRef.current;
-    const pad = padRef.current;
-    if (palco === null || canvas === null || pad === null) return;
+    if (palco === null || canvas === null) return;
     const ctx = canvas.getContext('2d');
     if (ctx === null) return;
 
     const reduzMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const COLS = 30;
-    const ROWS = 15;
+    const COLS = 36;
+    const ROWS = 18;
     const visitadas = new Uint8Array(COLS * ROWS);
     let largura = 0;
     let altura = 0;
     let feitas = 0;
     let concluido = false;
     let semente = 11;
-    let quadroDemo = 0;
-    let temporizadorDemo = 0;
     let temporizadorResize = 0;
     let ultimoX: number | null = null;
     let ultimoY = 0;
-    let demoRodando = false;
 
     // Gerador pseudoaleatório fixo: os riscos são os mesmos a cada visita.
     const aleatorio = (): number => {
@@ -424,18 +413,10 @@ function PalcoPolido() {
       return (semente - 1) / 2147483646;
     };
 
-    const escreverProgresso = (p: number): void => {
-      if (pctRef.current !== null) pctRef.current.textContent = `${p}%`;
-      if (barraRef.current !== null) barraRef.current.style.width = `${p}%`;
-    };
-
     const concluir = (): void => {
       if (concluido) return;
       concluido = true;
-      escreverProgresso(100);
       setPolido(true);
-      setAtivo(false);
-      setDica('Polido.');
     };
     revelarRef.current = concluir;
 
@@ -502,22 +483,25 @@ function PalcoPolido() {
       }
       visitadas.fill(0);
       feitas = 0;
-      escreverProgresso(0);
     };
 
-    const atualizar = (): void => {
-      const p = Math.min(100, Math.round((feitas / (COLS * ROWS)) * 112));
-      escreverProgresso(p);
-      if (p >= 96) concluir();
-    };
-
-    const marcar = (x: number, y: number, raio: number): void => {
-      const c0 = Math.max(0, Math.floor(((x - raio * 0.6) / largura) * COLS));
-      const c1 = Math.min(COLS - 1, Math.floor(((x + raio * 0.6) / largura) * COLS));
-      const l0 = Math.max(0, Math.floor(((y - raio * 0.6) / altura) * ROWS));
-      const l1 = Math.min(ROWS - 1, Math.floor(((y + raio * 0.6) / altura) * ROWS));
+    /**
+     * Marca como limpas as células cujo centro está na parte sólida da escova.
+     * O polimento só conclui com todas as células passadas, então nunca acaba
+     * antes de a superfície estar realmente limpa.
+     */
+    const marcar = (x: number, y: number, raioSolido: number): void => {
+      const larguraCelula = largura / COLS;
+      const alturaCelula = altura / ROWS;
+      const c0 = Math.max(0, Math.floor((x - raioSolido) / larguraCelula));
+      const c1 = Math.min(COLS - 1, Math.floor((x + raioSolido) / larguraCelula));
+      const l0 = Math.max(0, Math.floor((y - raioSolido) / alturaCelula));
+      const l1 = Math.min(ROWS - 1, Math.floor((y + raioSolido) / alturaCelula));
       for (let l = l0; l <= l1; l += 1) {
         for (let c = c0; c <= c1; c += 1) {
+          const dx = (c + 0.5) * larguraCelula - x;
+          const dy = (l + 0.5) * alturaCelula - y;
+          if (dx * dx + dy * dy > raioSolido * raioSolido) continue;
           const k = l * COLS + c;
           if (visitadas[k] === 0) {
             visitadas[k] = 1;
@@ -528,7 +512,7 @@ function PalcoPolido() {
     };
 
     const polirPonto = (x: number, y: number): void => {
-      const raio = 86 * dpr;
+      const raio = 90 * dpr;
       ctx.globalCompositeOperation = 'destination-out';
       const gradiente = ctx.createRadialGradient(x, y, 0, x, y, raio);
       gradiente.addColorStop(0, 'rgba(0,0,0,1)');
@@ -538,7 +522,7 @@ function PalcoPolido() {
       ctx.beginPath();
       ctx.arc(x, y, raio, 0, Math.PI * 2);
       ctx.fill();
-      marcar(x, y, raio);
+      marcar(x, y, raio * 0.5);
     };
 
     // x, y em pixels do canvas. Interpola entre pontos para não deixar buracos.
@@ -555,13 +539,7 @@ function PalcoPolido() {
       }
       ultimoX = x;
       ultimoY = y;
-      atualizar();
-    };
-
-    const posicionar = (xCss: number, yCss: number): void => {
-      pad.style.transform = `translate(${xCss}px, ${yCss}px)`;
-      palco.style.setProperty('--mx', `${xCss}px`);
-      palco.style.setProperty('--my', `${yCss}px`);
+      if (feitas >= COLS * ROWS) concluir();
     };
 
     const local = (evento: PointerEvent): { x: number; y: number } => {
@@ -571,48 +549,17 @@ function PalcoPolido() {
 
     const aoMover = (evento: PointerEvent): void => {
       const { x, y } = local(evento);
-      posicionar(x, y);
-      if (!concluido && !demoRodando) polirAte(x * dpr, y * dpr);
-    };
-    const aoEntrar = (): void => {
-      if (!concluido) setAtivo(true);
+      palco.style.setProperty('--mx', `${x}px`);
+      palco.style.setProperty('--my', `${y}px`);
+      if (!concluido) polirAte(x * dpr, y * dpr);
     };
     const aoSair = (): void => {
       ultimoX = null;
-      if (!demoRodando) setAtivo(false);
     };
     const aoPressionar = (evento: PointerEvent): void => {
-      if (concluido || demoRodando) return;
+      if (concluido) return;
       const { x, y } = local(evento);
-      setAtivo(true);
       polirAte(x * dpr, y * dpr);
-    };
-
-    /** A politriz passa uma vez sozinha, para ensinar o gesto. */
-    const demonstrar = (): void => {
-      demoRodando = true;
-      setAtivo(true);
-      const duracao = 2400;
-      let t0: number | null = null;
-      const passo = (agora: number): void => {
-        t0 ??= agora;
-        const k = Math.min(1, (agora - t0) / duracao);
-        const x = (0.05 + 0.9 * k) * largura;
-        const y = (0.5 + 0.3 * Math.sin(k * 13) * (1 - k * 0.3)) * altura;
-        posicionar(x / dpr, y / dpr);
-        if (!concluido) polirAte(x, y);
-        if (k < 1) {
-          quadroDemo = requestAnimationFrame(passo);
-        } else {
-          demoRodando = false;
-          ultimoX = null;
-          if (!concluido) {
-            setAtivo(false);
-            setDica('Agora é com você: passe o mouse');
-          }
-        }
-      };
-      quadroDemo = requestAnimationFrame(passo);
     };
 
     desenharRiscos();
@@ -624,79 +571,53 @@ function PalcoPolido() {
     }
 
     palco.addEventListener('pointermove', aoMover);
-    palco.addEventListener('pointerenter', aoEntrar);
     palco.addEventListener('pointerleave', aoSair);
     palco.addEventListener('pointerdown', aoPressionar);
-
-    let jaDemonstrou = false;
-    const observador = new IntersectionObserver(
-      (entradas) => {
-        for (const entrada of entradas) {
-          if (!entrada.isIntersecting || jaDemonstrou) continue;
-          jaDemonstrou = true;
-          temporizadorDemo = window.setTimeout(demonstrar, 500);
-        }
-      },
-      { threshold: 0.35 },
-    );
-    observador.observe(palco);
 
     const aoRedimensionar = (): void => {
       window.clearTimeout(temporizadorResize);
       temporizadorResize = window.setTimeout(() => {
-        if (!concluido && !demoRodando) desenharRiscos();
+        if (!concluido) desenharRiscos();
       }, 200);
     };
     window.addEventListener('resize', aoRedimensionar);
 
     return () => {
       palco.removeEventListener('pointermove', aoMover);
-      palco.removeEventListener('pointerenter', aoEntrar);
       palco.removeEventListener('pointerleave', aoSair);
       palco.removeEventListener('pointerdown', aoPressionar);
       window.removeEventListener('resize', aoRedimensionar);
-      observador.disconnect();
-      window.clearTimeout(temporizadorDemo);
       window.clearTimeout(temporizadorResize);
-      cancelAnimationFrame(quadroDemo);
     };
   }, []);
 
   return (
-    <div
-      ref={palcoRef}
-      className="lp-palco"
-      data-polido={polido}
-      data-pronto={pronto}
-      data-ativo={ativo}
-      role="group"
-      aria-label="Painel do Brilhoflow: agenda do dia por profissional. Passe o mouse sobre a pintura riscada para polir e revelar, ou use o botão Revelar tudo."
-    >
-      <PainelDecorativo />
-      <div className="lp-brilho" aria-hidden />
-      <canvas ref={canvasRef} aria-hidden />
-      <div ref={padRef} className="lp-pad" aria-hidden />
-      <div className="lp-pilula lp-pilula-esq" aria-hidden>
-        <span ref={pctRef}>0%</span>
-        <span className="lp-medidor">
-          <i ref={barraRef} style={{ width: '0%' }} />
-        </span>
-        <span style={{ opacity: 0.7 }}>polido</span>
-      </div>
-      <div className="lp-pilula lp-pilula-dir">
-        {polido ? (
-          <span>
-            <Sparkles className="mr-1.5 inline size-3.5" aria-hidden />
-            {dica}
-          </span>
-        ) : (
-          <>
-            <span aria-hidden>{dica}</span>
-            <button type="button" onClick={() => revelarRef.current()}>
-              Revelar tudo
-            </button>
-          </>
+    <div>
+      <div className="lp-convite" data-polido={polido}>
+        <div>
+          <p className="lp-convite-titulo">Faça o polimento</p>
+          <p className="lp-convite-texto">
+            <span className="lp-so-mouse">Passe o mouse sobre a pintura para polir.</span>
+            <span className="lp-so-toque">Passe o dedo sobre a pintura para polir.</span>
+          </p>
+        </div>
+        {polido ? null : (
+          <button type="button" className="lp-revelar-tudo" onClick={() => revelarRef.current()}>
+            Revelar tudo
+          </button>
         )}
+      </div>
+      <div
+        ref={palcoRef}
+        className="lp-palco"
+        data-polido={polido}
+        data-pronto={pronto}
+        role="group"
+        aria-label="Painel do Brilhoflow: agenda do dia por profissional. Passe o mouse sobre a pintura riscada para polir e revelar, ou use o botão Revelar tudo."
+      >
+        <PainelDecorativo />
+        <div className="lp-brilho" aria-hidden />
+        <canvas ref={canvasRef} aria-hidden />
       </div>
     </div>
   );
@@ -885,12 +806,12 @@ function ChaoDemo() {
                   />
                 </svg>
                 <div>
-                  <b>{emAtendimento ? cronometro(cartao.segundos + decorrido) : '—'}</b>
+                  <b>{emAtendimento ? cronometro(cartao.segundos + decorrido) : '-'}</b>
                   <small>{cartao.previstas}</small>
                 </div>
               </div>
               <div className="mx-auto" style={{ opacity: emAtendimento ? 1 : 0.45 }}>
-                <Placa valor={cartao.placa ?? '— — —'} />
+                <Placa valor={cartao.placa ?? '- - -'} />
               </div>
               <div className="lp-card-nome">
                 <b>{cartao.servico}</b>
@@ -908,8 +829,9 @@ function ChaoDemo() {
         <div className="superficie lp-num">
           <small>Caixa de hoje</small>
           <div className="v">{formatarMoeda(1240)}</div>
-          <span className="text-[0.82rem] font-semibold text-[var(--positivo)]">
-            ▲ 12,4% sobre o mês passado
+          <span className="inline-flex items-center gap-1.5 text-[0.82rem] font-semibold text-[var(--positivo)]">
+            <TrendingUp className="size-4" aria-hidden />
+            12,4% sobre o mês passado
           </span>
         </div>
         <div className="superficie lp-num">
