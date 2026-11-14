@@ -13,6 +13,8 @@ const conteudoSessaoSchema = z.object({
   papel: z.enum(['SUPER_ADMIN', 'ADMINISTRADOR', 'FUNCIONARIO']),
   nome: z.string(),
   email: z.string(),
+  /** Impressao digital da senha no momento do login; ver `versaoDaSenha`. */
+  versao: z.string().min(1),
 });
 
 export type ConteudoSessao = z.infer<typeof conteudoSessaoSchema>;

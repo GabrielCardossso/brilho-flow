@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { conferirSenha } from '@/auth/senha';
+import { conferirSenha, versaoDaSenha } from '@/auth/senha';
 import type { ConteudoSessao } from '@/auth/sessao';
 import { db } from '@/db/client';
 import { empresa, historicoAcesso, usuario } from '@/db/schema';
@@ -86,6 +86,7 @@ export async function autenticar(dados: LoginPayload): Promise<Result<ConteudoSe
     papel: conta.papel,
     nome: conta.nome,
     email: conta.email,
+    versao: versaoDaSenha(conta.senhaHash),
   });
 }
 

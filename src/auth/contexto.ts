@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { db } from '@/db/client';
-import { empresa as tabelaEmpresa } from '@/db/schema';
+import { empresa as tabelaEmpresa, usuario as tabelaUsuario } from '@/db/schema';
 import {
   motivoDoBloqueio,
   permiteRecurso,
@@ -15,6 +15,7 @@ import {
 } from '@/domain/plano';
 import { falha, naoAutorizado, ok, erro, type Result } from '@/domain/result';
 import { hojeISO } from '@/domain/shared/tempo';
+import { versaoDaSenha } from './senha';
 import { COOKIE_SESSAO, enriquecer, lerSessao, type UsuarioDaSessao } from './sessao';
 
 export interface EmpresaDoContexto {
@@ -54,14 +55,36 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
     return falha(erro('NAO_AUTENTICADO', 'Sessão expirada. Entre novamente.'));
   }
 
-  const [registro] = await db
-    .select()
-    .from(tabelaEmpresa)
-    .where(eq(tabelaEmpresa.id, conteudo.empresaId))
-    .limit(1);
+  const [[registro], [conta]] = await Promise.all([
+    db.select().from(tabelaEmpresa).where(eq(tabelaEmpresa.id, conteudo.empresaId)).limit(1),
+    db
+      .select({
+        empresaId: tabelaUsuario.empresaId,
+        nome: tabelaUsuario.nome,
+        email: tabelaUsuario.email,
+        papel: tabelaUsuario.papel,
+        ativo: tabelaUsuario.ativo,
+        senhaHash: tabelaUsuario.senhaHash,
+      })
+      .from(tabelaUsuario)
+      .where(eq(tabelaUsuario.id, conteudo.usuarioId))
+      .limit(1),
+  ]);
 
   if (registro === undefined) {
     return falha(erro('NAO_AUTENTICADO', 'Empresa da sessão não encontrada.'));
+  }
+
+  // O cookie so prova que houve um login. Quem manda e o banco: usuario
+  // arquivado, movido de empresa ou com a senha trocada perde a sessao agora,
+  // e o papel vigente (promocao ou rebaixamento) vale na proxima requisicao.
+  if (
+    conta === undefined ||
+    !conta.ativo ||
+    conta.empresaId !== conteudo.empresaId ||
+    versaoDaSenha(conta.senhaHash) !== conteudo.versao
+  ) {
+    return falha(erro('NAO_AUTENTICADO', 'Sessão expirada. Entre novamente.'));
   }
 
   const statusAtual = recalcularStatus(
@@ -86,7 +109,12 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
     proximoVencimento: registro.proximoVencimento,
   };
 
-  const usuario = enriquecer(conteudo);
+  const usuario = enriquecer({
+    ...conteudo,
+    nome: conta.nome,
+    email: conta.email,
+    papel: conta.papel,
+  });
 
   if (!usuario.ehSuperAdmin && !podeAcessar(situacao)) {
     return falha(

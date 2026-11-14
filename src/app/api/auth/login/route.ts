@@ -46,7 +46,8 @@ export async function POST(request: Request) {
 
     await registrarAcesso(resultado.value, request.headers);
 
-    return NextResponse.json({ usuario: resultado.value });
+    const { versao: _versao, ...usuario } = resultado.value;
+    return NextResponse.json({ usuario });
   } catch (excecao) {
     return respostaDeErroInesperado(excecao);
   }

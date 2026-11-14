@@ -1,6 +1,15 @@
+import { createHash } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 
 const CUSTO = 10;
+
+/**
+ * Impressao digital do hash de senha, gravada no cookie de sessao. Quando a
+ * senha muda, o hash muda e toda sessao emitida antes deixa de valer.
+ */
+export function versaoDaSenha(senhaHash: string): string {
+  return createHash('sha256').update(senhaHash).digest('hex').slice(0, 16);
+}
 
 export async function gerarHash(senhaPura: string): Promise<string> {
   return bcrypt.hash(senhaPura, CUSTO);
