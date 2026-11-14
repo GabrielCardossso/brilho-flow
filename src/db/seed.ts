@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -33,7 +34,6 @@ const ACENTO_PADRAO = 'tacometro';
 const HEX_PADRAO = '#f59e0b';
 const CNPJ_DEMO = '45598776000156';
 const EMAIL_DEMO = 'demo@lumenauto.com.br';
-const SENHA_DEMO = 'Demo@2026';
 
 function exigir(nome: string, padrao?: string): string {
   const valor = process.env[nome] ?? padrao;
@@ -54,6 +54,12 @@ function dataDoMes(mesesAtras: number, dia: number, hora: number): Date {
   data.setMonth(data.getMonth() - mesesAtras, dia);
   data.setHours(hora, 0, 0, 0);
   return data;
+}
+
+/** Historico ja realizado nao pode estar no futuro (receita "recebida" amanha). */
+function noPassado(data: Date): Date {
+  const agora = new Date();
+  return data.getTime() < agora.getTime() ? data : new Date(agora.getTime() - 24 * 60 * 60 * 1000);
 }
 
 function dataISO(data: Date): string {
@@ -85,7 +91,7 @@ async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>)
         razaoSocial: 'EsteticaFlow Tecnologia Ltda',
         nomeFantasia: 'EsteticaFlow',
         cnpj: '19131243000197',
-        email: 'gabrielcardossso@gmail.com',
+        email: emailAdmin,
         plano: 'COMPLETO',
         valorMensalidade: '0.00',
         proximoVencimento: daquiAMeses(120),
@@ -112,7 +118,10 @@ async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>)
   });
 }
 
-async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>): Promise<boolean> {
+/** Devolve a senha do usuario demo quando a empresa foi criada; `null` se nada foi feito. */
+async function criarDemonstracao(
+  db: ReturnType<typeof drizzle<typeof schema>>,
+): Promise<string | null> {
   const [existente] = await db
     .select({ id: empresa.id })
     .from(empresa)
@@ -120,13 +129,15 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
     .limit(1);
 
   if (existente !== undefined) {
-    if (process.env.SEED_DEMO_RECRIAR !== 'true') return false;
+    if (process.env.SEED_DEMO_RECRIAR !== 'true') return null;
     // O CNPJ ficticio identifica apenas o tenant demonstrativo. As FKs em
     // cascata removem exclusivamente os registros desta empresa.
     await db.delete(empresa).where(eq(empresa.id, existente.id));
   }
 
-  const senhaHash = await bcrypt.hash(process.env.SEED_DEMO_SENHA ?? SENHA_DEMO, 10);
+  // Nenhuma senha fixa no repositorio: vem do ambiente ou e gerada na hora.
+  const senhaDemo = process.env.SEED_DEMO_SENHA ?? randomBytes(12).toString('base64url');
+  const senhaHash = await bcrypt.hash(senhaDemo, 10);
 
   await db.transaction(async (tx) => {
     const [demo] = await tx
@@ -537,7 +548,7 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
           clienteId: clientes[(indice * 5 + ordem) % clientes.length]?.id ?? 0,
           veiculoId: veiculos[(indice * 7 + ordem) % veiculos.length]?.id ?? 0,
           responsavelId: equipe[1 + ((indice + ordem) % (equipe.length - 1))]?.id ?? null,
-          dataHora: dataDoMes(5 - indice, 2 + ((ordem * 3) % 26), 8 + (ordem % 5) * 2),
+          dataHora: noPassado(dataDoMes(5 - indice, 2 + ((ordem * 3) % 26), 8 + (ordem % 5) * 2)),
           duracaoMinutos: String(
             lista.reduce((total, item) => total + item.tempoEstimadoMinutos, 0),
           ),
@@ -584,7 +595,7 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
 
     await tx.insert(despesa).values(
       Array.from({ length: 6 }, (_, indice) => {
-        const data = dataDoMes(5 - indice, 5, 12);
+        const data = noPassado(dataDoMes(5 - indice, 5, 12));
         const despesasDoMes: Array<{
           descricao: string;
           categoria: 'FIXA' | 'FORNECEDOR' | 'VARIAVEL';
@@ -623,7 +634,7 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
 
     await tx.insert(movimentacaoEstoque).values(
       Array.from({ length: 6 }, (_, indice) => {
-        const data = dataDoMes(5 - indice, 2, 10);
+        const data = noPassado(dataDoMes(5 - indice, 2, 10));
         return produtos.slice(0, 5).map((item, produtoIndice) => ({
           empresaId: demo.id,
           produtoId: item.id,
@@ -681,7 +692,7 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
     );
   });
 
-  return true;
+  return senhaDemo;
 }
 
 async function principal(): Promise<void> {
@@ -691,11 +702,17 @@ async function principal(): Promise<void> {
 
   try {
     await garantirPlataforma(db);
-    const criada = await criarDemonstracao(db);
 
-    if (criada) {
+    if (process.env.NODE_ENV === 'production' && process.env.SEED_DEMO !== 'true') {
+      console.warn('› Produção: empresa de demonstração ignorada (use SEED_DEMO=true para criar).');
+      return;
+    }
+
+    const senhaDemo = await criarDemonstracao(db);
+
+    if (senhaDemo !== null) {
       console.warn('✓ Empresa de demonstração criada: Lumen Auto Studio.');
-      console.warn(`  Acesso: ${EMAIL_DEMO} · senha ${process.env.SEED_DEMO_SENHA ?? SENHA_DEMO}`);
+      console.warn(`  Acesso: ${EMAIL_DEMO} · senha ${senhaDemo}`);
     } else {
       console.warn('› A empresa de demonstração já existe. Nenhum dado foi duplicado.');
     }

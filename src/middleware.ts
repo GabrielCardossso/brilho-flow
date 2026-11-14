@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { COOKIE_SESSAO, lerSessao } from '@/auth/sessao';
 
-const ROTAS_PUBLICAS = ['/', '/login', '/suporte', '/planos'];
+const ROTAS_PUBLICAS = ['/', '/login', '/suporte'];
 const PREFIXOS_PUBLICOS = ['/api/auth/', '/_next/', '/favicon', '/imagens/'];
 
 type BaldeRateLimit = { quantidade: number; expiraEm: number };
