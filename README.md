@@ -191,7 +191,7 @@ Existia uma tabela de funcionários sem nenhuma tela de cadastro: o seletor de r
 
 ## Modelo de dados
 
-22 tabelas, todas com `empresa_id` (exceto `empresa` e `controle_rate_limit`) e auditoria de criação/atualização.
+23 tabelas, todas com `empresa_id` (exceto `empresa`, `controle_rate_limit` e `sessao_revogada`) e auditoria de criação/atualização.
 
 | Área | Tabelas |
 | --- | --- |
@@ -199,7 +199,7 @@ Existia uma tabela de funcionários sem nenhuma tela de cadastro: o seletor de r
 | Operação | `cliente`, `veiculo`, `categoria_servico`, `servico`, `agendamento`, `agendamento_servico` |
 | Estoque | `categoria_produto`, `produto`, `estoque`, `movimentacao_estoque` |
 | Financeiro | `forma_pagamento`, `receita`, `parcela_recebimento`, `despesa` |
-| Plataforma | `log`, `historico_acesso`, `notificacao`, `controle_rate_limit` |
+| Plataforma | `log`, `historico_acesso`, `notificacao`, `controle_rate_limit`, `sessao_revogada` |
 
 Invariantes replicadas no banco, não só no código:
 
@@ -220,7 +220,8 @@ Invariantes replicadas no banco, não só no código:
 - **Isolamento multiempresa**: `empresaId` sempre da sessão assinada, nunca de parâmetro do cliente.
 - **Revalidação por requisição**: empresa bloqueada perde acesso na próxima ação, sem esperar o cookie expirar. O **usuário** também é relido a cada requisição: arquivado, movido de empresa ou com a senha trocada perde a sessão na hora, e o papel vigente vem do banco (não do cookie).
 - **Limite de tentativas**: login (por IP e por e-mail) e pagamentos têm contador persistente no banco; o middleware ainda aplica um escudo de rajada por instância.
-- **Limitação conhecida**: o logout apaga o cookie do navegador, mas o token é sem estado e só deixa de valer ao expirar, trocar a senha ou arquivar o usuário.
+- **Logout revoga o token**: cada sessão tem um identificador (`jti`); ao sair, ele entra em `sessao_revogada` até o token expirar, então um cookie copiado também deixa de valer.
+- **Contador de notificações**: os alertas são recalculados no máximo a cada 5 minutos por empresa ao navegar pelo painel, e sempre ao abrir a tela de notificações.
 - **Cabeçalhos**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, HSTS de 1 ano.
 - **Mensagem de login única** para e-mail inexistente e senha errada — não revela quais contas existem.
 - **Trilha de auditoria** por empresa e histórico de acesso por usuário.
@@ -253,11 +254,18 @@ Estado atual desta entrega:
 | --- | --- |
 | `tsc --noEmit` (strict) | ✅ sem erros |
 | ESLint | ✅ sem erros e sem avisos |
-| Vitest — domínio e validações | ✅ 68 testes |
+| Vitest — domínio, validações e sessão | ✅ 71 testes |
 | `next build` | ✅ 16 páginas + 65 rotas de API |
 | Java remanescente | ✅ nenhum arquivo |
 
-**Não verificado neste ambiente:** as migrations e o seed ainda não foram executados contra um PostgreSQL real, e as regras que dependem de banco (travas, transações, índices parciais) não têm teste automatizado — os testes cobrem o domínio puro e as validações. **Rode `yarn db:migrate` e `yarn db:seed` em uma base limpa antes de considerar o schema validado.** Testes de integração com banco real (testcontainers) e e2e (Playwright) seguem como próximo passo.
+**Não verificado neste ambiente:** as migrations e o seed ainda não foram executados contra um PostgreSQL real, e as regras que dependem de banco (travas, transações, índices parciais) não têm teste automatizado — os testes cobrem o domínio puro e as validações. **Rode `yarn db:migrate` e `yarn db:seed` em uma base limpa antes de considerar o schema validado**, por exemplo:
+
+```bash
+docker run -d --name esteticaflow-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=esteticaflow -p 5432:5432 postgres:16
+# .env: DATABASE_URL=postgresql://postgres:postgres@localhost:5432/esteticaflow
+yarn db:migrate && yarn db:seed
+```
+ Testes de integração com banco real (testcontainers) e e2e (Playwright) seguem como próximo passo.
 
 ---
 

@@ -281,7 +281,7 @@ Não se agenda para cliente arquivado, mesmo que o veículo esteja ativo. Conclu
 | RNF-01 | **Segurança de tipos** | TypeScript `strict` com `noUncheckedIndexedAccess` e `exactOptionalPropertyTypes`. `any` proibido pelo ESLint |
 | RNF-02 | **Validação de fronteira** | Todo dado que entra (corpo, query, variáveis de ambiente) passa por Zod. Os tipos derivam do schema |
 | RNF-03 | **Isolamento multiempresa** | `empresaId` vem sempre da sessão assinada, nunca do cliente |
-| RNF-04 | **Autenticação** | Cookie `httpOnly`, `SameSite=Lax`, assinado com HS256; `Secure` em produção. Senha com bcrypt custo 10. A cada requisição o usuário é relido: arquivado, movido de empresa ou com senha trocada perde a sessão, e o papel vem do banco |
+| RNF-04 | **Autenticação** | Cookie `httpOnly`, `SameSite=Lax`, assinado com HS256; `Secure` em produção. Senha com bcrypt custo 10. A cada requisição o usuário é relido: arquivado, movido de empresa ou com senha trocada perde a sessão, e o papel vem do banco. O logout revoga o token (lista de `jti` revogados) |
 | RNF-04b | **Proteção contra abuso** | Limite de tentativas de login (por IP e por e-mail) e de pagamentos, com contador persistente em `controle_rate_limit` |
 | RNF-05 | **Autorização em três camadas** | Rota (middleware) → perfil (guard) → recurso do plano (gate) |
 | RNF-06 | **Integridade no banco** | Chaves estrangeiras, *check constraints* e índices únicos parciais replicam as invariantes do domínio |

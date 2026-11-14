@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { versaoDaSenha } from '@/auth/senha';
+import { assinarSessao, lerSessao } from '@/auth/sessao';
 import { excedeLimiteDeQuantidade, normalizarQuantidade } from '@/domain/estoque';
 import { dinheiroOpcional, dinheiroPositivo, LIMITE_VALOR } from '@/schemas/comuns';
 
@@ -15,6 +16,45 @@ describe('versão da senha na sessão', () => {
   it('não expõe o hash original', () => {
     expect(versaoDaSenha('$2a$10$abc')).not.toContain('abc');
     expect(versaoDaSenha('$2a$10$abc')).toHaveLength(16);
+  });
+});
+
+describe('token de sessão', () => {
+  const conteudo = {
+    usuarioId: 7,
+    empresaId: 3,
+    papel: 'ADMINISTRADOR' as const,
+    nome: 'Ana',
+    email: 'ana@exemplo.com.br',
+    versao: 'abc123',
+  };
+
+  beforeAll(() => {
+    process.env.SESSION_SECRET = 'segredo-de-teste-com-mais-de-trinta-e-dois-caracteres';
+  });
+
+  it('cada login recebe um identificador (jti) próprio, para poder ser revogado', async () => {
+    const a = await assinarSessao(conteudo, false);
+    const b = await assinarSessao(conteudo, false);
+    const lidaA = await lerSessao(a.token);
+    const lidaB = await lerSessao(b.token);
+    expect(lidaA?.jti).toBeTruthy();
+    expect(lidaA?.jti).not.toBe(lidaB?.jti);
+  });
+
+  it('devolve conteúdo, versão e expiração', async () => {
+    const { token } = await assinarSessao(conteudo, true);
+    const lida = await lerSessao(token);
+    expect(lida?.usuarioId).toBe(7);
+    expect(lida?.versao).toBe('abc123');
+    expect(lida?.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
+  });
+
+  it('rejeita token adulterado ou vazio', async () => {
+    const { token } = await assinarSessao(conteudo, false);
+    expect(await lerSessao(`${token}x`)).toBeNull();
+    expect(await lerSessao('')).toBeNull();
+    expect(await lerSessao(undefined)).toBeNull();
   });
 });
 
