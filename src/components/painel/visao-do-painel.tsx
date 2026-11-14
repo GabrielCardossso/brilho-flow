@@ -25,7 +25,8 @@ import { Vazio } from '@/components/ui/vazio';
 import { CATALOGO_RELACIONAMENTO, type Relacionamento } from '@/domain/cliente';
 import { ROTULO_STATUS, type StatusAgendamento } from '@/domain/agendamento';
 import { formatarHora, formatarRelativo, m } from '@/domain/shared/tempo';
-import { formatarMoeda, formatarQuantidade } from '@/domain/shared/texto';
+import { descreverSaldo } from '@/domain/estoque';
+import { formatarMoeda } from '@/domain/shared/texto';
 import { useSessao } from '@/hooks/use-sessao';
 import { api, mensagemDeErro } from '@/lib/api';
 import { chaves } from '@/lib/chaves';
@@ -351,11 +352,10 @@ export function VisaoDoPainel() {
                   <Package className="size-4 shrink-0 text-[var(--tinta-tenue)]" aria-hidden />
                 </div>
                 <p className="numerico mt-2 text-lg text-[var(--critico)]">
-                  {formatarQuantidade(alerta.quantidadeAtual)}{' '}
-                  <span className="text-xs text-[var(--tinta-tenue)]">{alerta.unidadeMedida}</span>
+                  {descreverSaldo(alerta.quantidadeAtual, alerta.unidadeMedida)}
                 </p>
                 <p className="mb-2 text-xs text-[var(--tinta-tenue)]">
-                  Mínimo: {formatarQuantidade(alerta.quantidadeMinima)} {alerta.unidadeMedida}
+                  Mínimo: {descreverSaldo(alerta.quantidadeMinima, alerta.unidadeMedida)}
                 </p>
                 <Medidor percentual={alerta.percentual} tom="critico" rotulo={alerta.nome} />
               </div>

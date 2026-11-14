@@ -153,10 +153,11 @@ export function Landing() {
         <section id="painel" className="lp-secao scroll-mt-16">
           <div className="lp-contem">
             <div className="lp-revelar">
-              <h2 className="lp-h2">O chão da oficina, ao vivo.</h2>
+              <h2 className="lp-h2">Quem está fazendo o quê, agora.</h2>
               <p className="lp-texto mt-4">
-                Cada profissional mostra o carro que está em atendimento, há quanto tempo e o que
-                vem depois. Em vez de tabelas, você enxerga a oficina.
+                Cada cartão é um profissional da equipe. Ele mostra o carro que está sendo
+                atendido, há quanto tempo e qual é o próximo da fila. Em vez de uma tabela, você vê
+                a oficina como ela está agora.
               </p>
             </div>
             <ChaoDemo />
@@ -595,11 +596,22 @@ function PalcoPolido() {
     <div>
       <div className="lp-convite" data-polido={polido}>
         <div>
-          <p className="lp-convite-titulo">Faça o polimento</p>
-          <p className="lp-convite-texto">
-            <span className="lp-so-mouse">Passe o mouse sobre a pintura para polir.</span>
-            <span className="lp-so-toque">Passe o dedo sobre a pintura para polir.</span>
-          </p>
+          {polido ? (
+            <>
+              <p className="lp-convite-titulo">Esse é o painel do Brilhoflow</p>
+              <p className="lp-convite-texto">
+                A agenda do dia por profissional, o estoque e o caixa, tudo na mesma tela.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="lp-convite-titulo">Faça o polimento para ver o painel</p>
+              <p className="lp-convite-texto">
+                <span className="lp-so-mouse">Passe o mouse sobre a pintura riscada até limpar tudo.</span>
+                <span className="lp-so-toque">Passe o dedo sobre a pintura riscada até limpar tudo.</span>
+              </p>
+            </>
+          )}
         </div>
         {polido ? null : (
           <button type="button" className="lp-revelar-tudo" onClick={() => revelarRef.current()}>
@@ -642,15 +654,20 @@ function PainelDecorativo() {
           <div>
             <h3>Hoje na oficina</h3>
             <span className="text-[0.82rem] text-[var(--tinta-suave)]">
-              3 profissionais · 8 ordens de serviço
+              3 profissionais · 8 atendimentos
             </span>
           </div>
-          <div className="text-right">
-            <small className="block text-xs text-[var(--tinta-suave)]">Caixa do dia</small>
-            <b className="font-[family-name:var(--font-display)] text-3xl tracking-[-0.04em]">
-              {formatarMoeda(1240)}
-            </b>
-          </div>
+          <ul className="lp-ui-kpis">
+            <li>
+              <b>2</b> em andamento
+            </li>
+            <li>
+              <b>4</b> aguardando
+            </li>
+            <li>
+              <b>{formatarMoeda(1240)}</b> no caixa
+            </li>
+          </ul>
         </div>
         <div className="lp-trilhos">
           <div className="lp-trilho">
@@ -679,7 +696,7 @@ function PainelDecorativo() {
               <small>BMW 320i · ABC1D23</small>
             </div>
           </div>
-          <div className="lp-trilho">
+          <div className="lp-trilho lp-trilho-extra">
             <em>Diego</em>
             <div className="lp-blk b" style={{ left: '18%', width: '14%' }}>
               <b>Lavagem</b>
@@ -695,6 +712,20 @@ function PainelDecorativo() {
             </div>
           </div>
         </div>
+        <ul className="lp-legenda">
+          <li>
+            <i className="a" />
+            Em andamento
+          </li>
+          <li>
+            <i className="b" />
+            Concluído
+          </li>
+          <li>
+            <i className="c" />
+            Agendado
+          </li>
+        </ul>
       </div>
     </div>
   );

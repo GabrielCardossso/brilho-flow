@@ -256,7 +256,7 @@ export function Casca({
       ) : null}
       {/* -------------------------------- Lateral fixa (desktop) ---------- */}
       <aside className="painel-lateral sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[var(--borda)] lg:flex">
-        <div className="flex h-[72px] items-center border-b border-[var(--borda)] px-5">
+        <div className="flex h-[68px] items-center border-b border-[var(--borda)] px-5">
           <Link href="/painel" aria-label="Ir para o painel">
             <Marca />
           </Link>
@@ -275,7 +275,7 @@ export function Casca({
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
           <div className="painel-lateral relative flex h-full w-72 max-w-[85vw] flex-col border-r border-[var(--borda)] shadow-2xl">
-            <div className="flex h-[72px] items-center justify-between border-b border-[var(--borda)] px-5">
+            <div className="flex h-[68px] items-center justify-between border-b border-[var(--borda)] px-5">
               <Marca />
               <button
                 type="button"

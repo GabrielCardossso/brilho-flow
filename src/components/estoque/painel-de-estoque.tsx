@@ -382,7 +382,7 @@ export function PainelDeEstoque() {
         </div>
       </Cartao>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+      <div className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_21rem]">
         <Cartao>
           {isLoading ? (
             <div className="p-4">
@@ -423,7 +423,7 @@ export function PainelDeEstoque() {
                 {(itens ?? []).map((item) => (
                   <Linha key={item.produtoId}>
                     <Celula>
-                      <p className="font-medium text-[var(--tinta)]">{item.nome}</p>
+                      <p className="min-w-40 font-medium text-[var(--tinta)]">{item.nome}</p>
                       <p className="text-xs text-[var(--tinta-tenue)]">{item.categoriaNome}</p>
                       {!item.ativo ? (
                         <Etiqueta tom="neutro" className="mt-1">
@@ -503,12 +503,13 @@ export function PainelDeEstoque() {
           )}
         </Cartao>
 
-        <Cartao>
+        {/* Acompanha a rolagem da tabela: o histórico fica à vista enquanto se percorrem os produtos. */}
+        <Cartao className="flex max-h-[28rem] flex-col overflow-hidden 2xl:sticky 2xl:top-24 2xl:max-h-[calc(100dvh-8rem)]">
           <CartaoCabecalho titulo="Movimentações recentes" />
           {(movimentacoes?.length ?? 0) === 0 ? (
             <Vazio icone={History} titulo="Sem movimentações" />
           ) : (
-            <ul className="max-h-[32rem] divide-y divide-[var(--borda)] overflow-y-auto">
+            <ul className="min-h-0 flex-1 divide-y divide-[var(--borda)] overflow-y-auto">
               {(movimentacoes ?? []).map((movimentacao) => (
                 <li key={movimentacao.id} className="px-5 py-3">
                   <div className="flex items-start justify-between gap-2">
@@ -682,7 +683,7 @@ export function PainelDeEstoque() {
         descricao={
           movimentando === null
             ? undefined
-            : `${movimentando.item.nome} · saldo atual ${formatarQuantidade(movimentando.item.quantidadeAtual)} ${movimentando.item.unidadeMedida}`
+            : `${movimentando.item.nome} · saldo atual ${quantidadeFormatada(movimentando.item.quantidadeAtual, movimentando.item.unidadeMedida)}`
         }
         rodape={
           <>

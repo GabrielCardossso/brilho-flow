@@ -1,5 +1,6 @@
 import { falha, ok, validacao, type Result } from './result';
 import { Dinheiro, dividirComEscala, Quantidade } from './shared/decimal';
+import { formatarQuantidade } from './shared/texto';
 
 export const UNIDADES = ['UN', 'ML', 'L', 'KG', 'G'] as const;
 export type UnidadeMedida = (typeof UNIDADES)[number];
@@ -224,4 +225,14 @@ export function descricaoDaCompra(
 ): string {
   const limpo = quantidade.replace(/\.?0+$/, '') || '0';
   return `Compra de estoque: ${nomeProduto} (${limpo} ${unidade})`;
+}
+
+/**
+ * Texto de saldo para qualquer tela ou aviso: converte a unidade base para a
+ * forma legível ("1,5 L") e formata em pt-BR. O valor cru do banco ("2.000")
+ * nunca deve ser mostrado, porque o ponto parece separador de milhar.
+ */
+export function descreverSaldo(quantidadeBase: string, unidadeBase: UnidadeBase): string {
+  const exibicao = exibirQuantidadeInteligente(quantidadeBase, unidadeBase);
+  return `${formatarQuantidade(exibicao.quantidade)} ${exibicao.unidade}`;
 }
