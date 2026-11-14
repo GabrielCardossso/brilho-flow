@@ -166,7 +166,7 @@ export function QuadroDoDia() {
           />
         </div>
       ) : (
-        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto scroll-px-4 px-4 pb-4 max-sm:snap-mandatory sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           {ETAPAS_QUADRO.map((etapa) => {
             const cartoes = porEtapa.get(etapa) ?? [];
             const valida =
@@ -190,7 +190,7 @@ export function QuadroDoDia() {
                   soltarEm(etapa);
                 }}
                 className={cn(
-                  'superficie flex w-72 shrink-0 snap-start flex-col overflow-hidden transition-[opacity,box-shadow] duration-[var(--duracao-media)]',
+                  'superficie flex w-[82vw] max-w-72 shrink-0 snap-start flex-col overflow-hidden sm:w-72 transition-[opacity,box-shadow] duration-[var(--duracao-media)]',
                   bloqueada && 'opacity-50',
                   sobre === etapa && 'ring-2 ring-[var(--acento)]',
                 )}

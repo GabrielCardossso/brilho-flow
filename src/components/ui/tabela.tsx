@@ -57,7 +57,7 @@ export function Tabela({ className, ...resto }: HTMLAttributes<HTMLTableElement>
       ref={raiz}
       data-rolagem-liberada={liberada}
       className={cn(
-        'max-h-[calc(100dvh-13rem)] w-full overflow-x-auto rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]',
+        'w-full overflow-x-auto lg:max-h-[calc(100dvh-13rem)] rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]',
         liberada ? 'overflow-y-auto' : 'overflow-y-hidden',
       )}
     >

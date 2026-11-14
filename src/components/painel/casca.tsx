@@ -12,8 +12,9 @@ import {
   Gauge,
   Kanban,
   LogOut,
-  Menu,
+  Ellipsis,
   Moon,
+  Search,
   ScrollText,
   Settings,
   Sun,
@@ -24,7 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Marca, Simbolo } from '@/components/marca';
 import { Botao } from '@/components/ui/botao';
 import { Etiqueta } from '@/components/ui/etiqueta';
@@ -45,6 +46,7 @@ interface ItemDeMenu {
   icone: typeof Gauge;
   recurso?: Recurso;
   somenteSuperAdmin?: boolean;
+  rotuloCurto?: string;
 }
 
 interface GrupoDeMenu {
@@ -125,6 +127,8 @@ export function Casca({
   const { data: sessao } = useSessao(sessaoInicial);
   const [menuAberto, setMenuAberto] = useState(false);
   const [recolhida, setRecolhida] = useState(false);
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const inicioDoToque = useRef<number | null>(null);
   const [animarLateral, setAnimarLateral] = useState(false);
   const [indoPara, setIndoPara] = useState<string | null>(null);
   const [modo, setModo] = useState<ModoTema>(modoInicial === 'sistema' ? 'escuro' : modoInicial);
@@ -155,7 +159,28 @@ export function Casca({
     });
   }, []);
 
+  // Gaveta do celular: a página de trás não rola, e Esc fecha.
   useEffect(() => {
+    if (!menuAberto) return;
+    const anterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setMenuAberto(false);
+    };
+    document.addEventListener('keydown', aoTeclar);
+    return () => {
+      document.body.style.overflow = anterior;
+      document.removeEventListener('keydown', aoTeclar);
+    };
+  }, [menuAberto]);
+
+  // Busca no celular: ao abrir, o foco vai direto para o campo.
+  useEffect(() => {
+    if (buscaAberta) document.getElementById('busca-global')?.focus();
+  }, [buscaAberta]);
+
+  useEffect(() => {
+    setBuscaAberta(false);
     setMenuAberto(false);
     setIndoPara(null);
   }, [caminho]);
@@ -232,6 +257,12 @@ export function Casca({
       return recursos.includes(item.recurso);
     }),
   })).filter((grupo) => grupo.itens.length > 0);
+
+  const ATALHOS = ['/painel', '/painel/agenda', '/painel/quadro', '/painel/clientes'];
+  const atalhosMoveis = gruposVisiveis
+    .flatMap((grupo) => grupo.itens)
+    .filter((item) => ATALHOS.includes(item.href))
+    .map((item) => (item.href === '/painel/quadro' ? { ...item, rotuloCurto: 'Quadro' } : item));
 
   const ativo = (href: string): boolean =>
     href === '/painel' ? caminho === '/painel' : caminho.startsWith(href);
@@ -412,9 +443,24 @@ export function Casca({
             type="button"
             aria-label="Fechar menu"
             onClick={() => setMenuAberto(false)}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="gaveta-fundo absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
-          <div className="painel-lateral relative flex h-full w-72 max-w-[85vw] flex-col border-r border-[var(--borda)] shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            onTouchStart={(evento) => {
+              inicioDoToque.current = evento.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(evento) => {
+              const inicio = inicioDoToque.current;
+              const fim = evento.changedTouches[0]?.clientX;
+              inicioDoToque.current = null;
+              // Arrastar para a esquerda fecha a gaveta.
+              if (inicio !== null && fim !== undefined && inicio - fim > 60) setMenuAberto(false);
+            }}
+            className="gaveta-painel painel-lateral relative flex h-full w-72 max-w-[85vw] flex-col border-r border-[var(--borda)] shadow-2xl"
+          >
             <div className="flex h-[68px] items-center justify-between border-b border-[var(--borda)] px-5">
               <Marca />
               <button
@@ -435,22 +481,39 @@ export function Casca({
       {/* -------------------------------- Conteúdo ------------------------ */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="painel-topo sticky top-0 z-30 flex h-[68px] items-center gap-3 border-b border-[var(--borda)] px-4 backdrop-blur-md sm:px-6">
-          <button
-            type="button"
-            onClick={() => setMenuAberto(true)}
-            aria-label="Abrir menu"
-            className="rounded-md p-1.5 text-[var(--tinta-suave)] transition-colors hover:bg-[var(--superficie-2)] hover:text-[var(--tinta)] lg:hidden"
-          >
-            <Menu className="size-5" />
-          </button>
-
           <Link href="/painel" className="lg:hidden" aria-label="Ir para o painel">
             <Simbolo className="size-7" />
           </Link>
 
-          <BuscaGlobal />
+          {/* No celular a busca é um ícone; ao tocar, ocupa a barra inteira. */}
+          <div
+            className={cn(
+              'min-w-0 flex-1 sm:flex',
+              buscaAberta
+                ? 'max-sm:fixed max-sm:inset-x-0 max-sm:top-0 max-sm:z-40 max-sm:flex max-sm:h-[68px] max-sm:items-center max-sm:gap-2 max-sm:border-b max-sm:border-[var(--borda)] max-sm:bg-[var(--superficie-0)] max-sm:px-4'
+                : 'max-sm:hidden',
+            )}
+          >
+            <BuscaGlobal />
+            <button
+              type="button"
+              onClick={() => setBuscaAberta(false)}
+              aria-label="Fechar busca"
+              className="rounded-md p-2 text-[var(--tinta-tenue)] hover:text-[var(--tinta)] sm:hidden"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
 
           <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setBuscaAberta(true)}
+              aria-label="Buscar"
+              className="rounded-md p-2.5 text-[var(--tinta-suave)] transition-colors hover:bg-[var(--superficie-2)] hover:text-[var(--tinta)] sm:hidden"
+            >
+              <Search className="size-5" />
+            </button>
             <button
               type="button"
               onClick={alternarModo}
@@ -493,11 +556,51 @@ export function Casca({
         <main
           id="conteudo"
           tabIndex={-1}
-          className="min-w-0 flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
+          className="min-w-0 flex-1 px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-8 lg:py-8 lg:pb-8"
         >
           <div className="mx-auto w-full max-w-[1400px]">{children}</div>
         </main>
       </div>
+
+      {/* ---------------------- Barra inferior (celular) ------------------- */}
+      <nav
+        aria-label="Atalhos"
+        className="painel-barra-inferior fixed inset-x-0 bottom-0 z-40 grid border-t border-[var(--borda)] backdrop-blur-md lg:hidden"
+        style={{
+          gridTemplateColumns: `repeat(${atalhosMoveis.length + 1}, minmax(0, 1fr))`,
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        {atalhosMoveis.map((item) => {
+          const Icone = item.icone;
+          const selecionado = ativo(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={selecionado ? 'page' : undefined}
+              onClick={() => {
+                if (!selecionado) setIndoPara(item.href);
+              }}
+              className={cn(
+                'flex h-16 flex-col items-center justify-center gap-1 px-1 text-[11px] font-medium transition-colors',
+                selecionado ? 'text-[var(--acento-ativo)]' : 'text-[var(--tinta-suave)]',
+              )}
+            >
+              <Icone className="size-5 shrink-0" aria-hidden />
+              <span className="max-w-full truncate">{item.rotuloCurto ?? item.rotulo}</span>
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMenuAberto(true)}
+          className="flex h-16 flex-col items-center justify-center gap-1 px-1 text-[11px] font-medium text-[var(--tinta-suave)]"
+        >
+          <Ellipsis className="size-5 shrink-0" aria-hidden />
+          <span>Mais</span>
+        </button>
+      </nav>
     </div>
   );
 }

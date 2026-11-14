@@ -167,9 +167,9 @@ export function ChaoDaOficina() {
               <div className="chao-topo">
                 <span>{trilha.nome}</span>
                 {atual !== undefined ? (
-                  <span>
-                    <i className="chao-vivo" aria-hidden />
-                    Em andamento
+                  <span className={estourou ? 'text-[var(--atencao)]' : undefined}>
+                    <i className="chao-vivo" data-atraso={estourou} aria-hidden />
+                    {estourou ? 'Passou do previsto' : 'Em andamento'}
                   </span>
                 ) : (
                   <span className="text-[var(--tinta-tenue)]">Livre</span>
@@ -192,10 +192,7 @@ export function ChaoDaOficina() {
                   {atual !== undefined ? (
                     <>
                       <b>{cronometro(decorrido)}</b>
-                      <small>
-                        {estourou ? 'além do previsto · ' : 'de '}
-                        {duracaoCurta(atual.duracaoMinutos)}
-                      </small>
+                      <small>de {duracaoCurta(atual.duracaoMinutos)}</small>
                     </>
                   ) : (
                     <>

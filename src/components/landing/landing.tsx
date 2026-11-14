@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Check,
   CircleDollarSign,
+  Heart,
   Menu,
   PackageCheck,
   TrendingUp,
@@ -17,6 +18,7 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import { Marca, Simbolo } from '@/components/marca';
 import { Botao } from '@/components/ui/botao';
 import { Placa } from '@/components/ui/placa';
+import { CONTATOS } from './contatos';
 import { CATALOGO_PLANOS, ROTULO_RECURSO, type Recurso } from '@/domain/plano';
 import { formatarMoeda } from '@/domain/shared/texto';
 import './landing.css';
@@ -331,16 +333,69 @@ export function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-[var(--borda)] px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1200px] flex-col gap-4 text-sm text-[var(--tinta-suave)] sm:flex-row sm:items-center sm:justify-between">
-          <Marca />
-          <p>Gestão para estética automotiva.</p>
-          <Link href="/suporte" className="font-medium hover:text-[var(--tinta)]">
-            Falar com o suporte
-          </Link>
+      <footer className="border-t border-[var(--borda)] px-4 pb-8 pt-14 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+          <div className="col-span-2 lg:col-span-1">
+            <Marca />
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--tinta-suave)]">
+              Gestão para estética automotiva.
+            </p>
+            <p className="mt-5 inline-flex items-center gap-1.5 text-sm text-[var(--tinta-suave)]">
+              Feito com
+              <Heart className="size-4 fill-[var(--acento)] text-[var(--acento)]" aria-hidden />
+              <span className="sr-only">amor</span>
+              por Gabriel Cardoso
+            </p>
+          </div>
+
+          <ColunaDoRodape titulo="Produto">
+            <a href="#painel">O painel</a>
+            <a href="#como">Como funciona</a>
+            <a href="#planos">Planos</a>
+          </ColunaDoRodape>
+
+          <ColunaDoRodape titulo="Acesso">
+            <Link href="/login">Entrar</Link>
+            <Link href="/suporte">Pedir acesso</Link>
+            <Link href="/suporte">Falar com o suporte</Link>
+          </ColunaDoRodape>
+
+          <ColunaDoRodape titulo="Contatos">
+            {CONTATOS.map((contato) => {
+              const Icone = contato.icone;
+              return (
+                <a
+                  key={contato.rotulo}
+                  href={contato.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2"
+                >
+                  <Icone className="size-4" aria-hidden />
+                  {contato.rotulo}
+                </a>
+              );
+            })}
+          </ColunaDoRodape>
         </div>
+
+        <p className="mx-auto mt-12 max-w-[1200px] border-t border-[var(--borda)] pt-6 text-xs text-[var(--tinta-tenue)]">
+          © {new Date().getFullYear()} Brilhoflow. Todos os direitos reservados.
+        </p>
       </footer>
     </div>
+  );
+}
+
+/** Coluna de links do rodapé: título pequeno e a lista logo abaixo. */
+function ColunaDoRodape({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <nav aria-label={titulo}>
+      <p className="rotulo-tecnico">{titulo}</p>
+      <div className="mt-4 flex flex-col items-start gap-3 text-sm text-[var(--tinta-suave)] [&_a]:transition-colors [&_a:hover]:text-[var(--tinta)]">
+        {children}
+      </div>
+    </nav>
   );
 }
 
