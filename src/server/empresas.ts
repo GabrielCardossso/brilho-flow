@@ -6,6 +6,7 @@ import {
   CATALOGO_PLANOS,
   diasEmAtraso,
   elegivelParaBloqueio,
+  limiteDeUsuarios,
   recalcularStatus,
   type Plano,
   type StatusAssinatura,
@@ -224,6 +225,21 @@ export async function atualizarAssinatura(
 
   const [alvo] = await db.select().from(empresa).where(eq(empresa.id, id)).limit(1);
   if (alvo === undefined) return falha(naoEncontrado('Empresa não encontrada.'));
+
+  const limiteNovo = limiteDeUsuarios(dados.plano);
+  const [contagem] = await db
+    .select({ total: count() })
+    .from(usuario)
+    .where(and(eq(usuario.empresaId, id), eq(usuario.ativo, true), ne(usuario.papel, 'SUPER_ADMIN')));
+  const ativos = Number(contagem?.total ?? 0);
+  if (ativos > limiteNovo) {
+    return falha(
+      conflito(
+        `A empresa tem ${ativos} usuários ativos e o plano ${CATALOGO_PLANOS[dados.plano].nome} permite ${limiteNovo}. Peça para arquivar ${ativos - limiteNovo} antes de mudar o plano.`,
+        'plano',
+      ),
+    );
+  }
 
   const status = recalcularStatus(
     { ativo: alvo.ativo, status: alvo.statusAssinatura, proximoVencimento: dados.proximoVencimento },

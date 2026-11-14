@@ -218,6 +218,22 @@ async function contarUsuariosAtivos(empresaId: number): Promise<number> {
   return Number(contagem?.total ?? 0);
 }
 
+/** Quantos outros administradores ativos a empresa tem alem do usuario informado. */
+async function outrosAdministradoresAtivos(empresaId: number, ignorarId: number): Promise<number> {
+  const [contagem] = await db
+    .select({ total: count() })
+    .from(usuario)
+    .where(
+      and(
+        eq(usuario.empresaId, empresaId),
+        eq(usuario.ativo, true),
+        eq(usuario.papel, 'ADMINISTRADOR'),
+        ne(usuario.id, ignorarId),
+      ),
+    );
+  return Number(contagem?.total ?? 0);
+}
+
 export async function criarUsuario(
   contexto: Contexto,
   dados: UsuarioPayload,
@@ -291,6 +307,16 @@ export async function atualizarUsuario(
     return falha(conflito('O administrador da plataforma não pode ser editado aqui.'));
   }
 
+  if (
+    alvo.papel === 'ADMINISTRADOR' &&
+    dados.papel !== 'ADMINISTRADOR' &&
+    (await outrosAdministradoresAtivos(contexto.empresaId, id)) === 0
+  ) {
+    return falha(
+      conflito('A empresa precisa de ao menos um administrador ativo. Promova outro usuário antes.', 'papel'),
+    );
+  }
+
   const [duplicado] = await db
     .select({ id: usuario.id })
     .from(usuario)
@@ -344,6 +370,17 @@ export async function alternarUsuarioAtivo(
   if (alvo === undefined) return falha(naoEncontrado('Usuário não encontrado.'));
   if (alvo.papel === 'SUPER_ADMIN') {
     return falha(conflito('O administrador da plataforma não pode ser alterado aqui.'));
+  }
+
+  if (
+    !ativo &&
+    alvo.ativo &&
+    alvo.papel === 'ADMINISTRADOR' &&
+    (await outrosAdministradoresAtivos(contexto.empresaId, id)) === 0
+  ) {
+    return falha(
+      conflito('A empresa precisa de ao menos um administrador ativo. Promova outro usuário antes.'),
+    );
   }
 
   if (ativo && !alvo.ativo) {
@@ -530,10 +567,29 @@ export async function atualizarFormaPagamento(
 ): Promise<Result<{ id: number }>> {
   const admin = exigirAdministrador(contexto);
   if (!admin.ok) return admin;
+  const recurso = exigirRecurso(contexto, 'FINANCEIRO');
+  if (!recurso.ok) return recurso;
+
+  const nome = dados.nome.trim();
+  const [duplicada] = await db
+    .select({ id: formaPagamento.id })
+    .from(formaPagamento)
+    .where(
+      and(
+        eq(formaPagamento.empresaId, contexto.empresaId),
+        ne(formaPagamento.id, id),
+        sql`lower(${formaPagamento.nome}) = lower(${nome})`,
+      ),
+    )
+    .limit(1);
+
+  if (duplicada !== undefined) {
+    return falha(conflito('Já existe uma forma de pagamento com este nome.', 'nome'));
+  }
 
   const [atualizada] = await db
     .update(formaPagamento)
-    .set({ nome: dados.nome.trim() })
+    .set({ nome })
     .where(and(eq(formaPagamento.id, id), eq(formaPagamento.empresaId, contexto.empresaId)))
     .returning({ id: formaPagamento.id });
 
@@ -548,6 +604,8 @@ export async function alternarFormaPagamentoAtiva(
 ): Promise<Result<{ id: number; ativo: boolean }>> {
   const admin = exigirAdministrador(contexto);
   if (!admin.ok) return admin;
+  const recurso = exigirRecurso(contexto, 'FINANCEIRO');
+  if (!recurso.ok) return recurso;
 
   const [atualizada] = await db
     .update(formaPagamento)
