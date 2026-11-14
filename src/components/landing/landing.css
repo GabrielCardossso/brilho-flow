@@ -242,111 +242,124 @@
   color: #fff;
   font-weight: 700;
 }
-.lp-legenda {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1.2rem;
-  font-size: 0.74rem;
-  color: var(--tinta-suave);
-}
-.lp-legenda li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-.lp-legenda i {
-  display: inline-block;
-  width: 0.9rem;
-  height: 0.55rem;
-  border-radius: 0.2rem;
-}
-.lp-legenda i.a {
-  background: var(--acento);
-}
-.lp-legenda i.b {
-  background: rgb(255 255 255 / 0.3);
-}
-.lp-legenda i.c {
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.4);
-}
 .lp-ui-topo h3 {
   font-size: 1.35rem;
   letter-spacing: -0.03em;
 }
-.lp-trilhos {
+/* Quadro Kanban que aparece sob a pintura */
+.lp-kb {
   display: grid;
-  align-content: start;
-  gap: 0.55rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: start;
 }
-.lp-trilho {
+.lp-kb-col {
   position: relative;
-  height: 3.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.85rem 0.55rem 0.55rem;
   border-radius: 0.8rem;
-  background: rgb(255 255 255 / 0.04);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05);
+  background: rgb(255 255 255 / 0.035);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
 }
-.lp-trilho > em {
+.lp-kb-col::before {
+  content: '';
   position: absolute;
-  left: 0.7rem;
-  top: 50%;
-  translate: 0 -50%;
-  font-style: normal;
-  font-size: 0.76rem;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: 0.8rem 0.8rem 0 0;
+  background: var(--cor, var(--tinta-tenue));
+}
+.lp-kb-col header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0 0.15rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--tinta-suave);
 }
-.lp-blk {
-  position: absolute;
-  top: 0.4rem;
-  bottom: 0.4rem;
+.lp-kb-col header span {
   overflow: hidden;
-  padding: 0.4rem 0.65rem;
-  border-radius: 0.6rem;
-  font-size: 0.74rem;
-  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.lp-blk b {
+.lp-kb-col header em {
+  min-width: 1.3rem;
+  padding: 0 0.35rem;
+  border-radius: 99px;
+  background: rgb(255 255 255 / 0.08);
+  font-style: normal;
+  font-size: 0.68rem;
+  text-align: center;
+}
+.lp-kb-card {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.55rem;
+  border-radius: 0.65rem;
+  background: rgb(255 255 255 / 0.07);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: #fff;
+}
+.lp-kb-card[data-ativo='true'] {
+  background: var(--acento);
+  color: var(--acento-texto);
+  box-shadow: none;
+}
+.lp-kb-card b {
   display: block;
   overflow: hidden;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.lp-blk small {
-  font-size: 0.68rem;
-  opacity: 0.7;
+.lp-kb-card small {
+  display: block;
+  overflow: hidden;
+  font-size: 0.66rem;
+  opacity: 0.72;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.lp-blk.a {
-  background: var(--acento);
-  color: var(--acento-texto);
-}
-.lp-blk.b {
-  background: rgb(255 255 255 / 0.09);
-  color: #fff;
-}
-.lp-blk.c {
-  background: rgb(255 255 255 / 0.05);
-  color: var(--tinta-suave);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.11);
+.lp-kb-card .placa {
+  justify-self: start;
 }
 
-/* Celular: sem barra lateral e com menos linhas, para o painel caber inteiro. */
+/* Celular: sem barra lateral; as colunas deslizam de lado, uma e meia por vez. */
 @media (max-width: 800px) {
   .lp-ui {
     grid-template-columns: 1fr;
   }
-  .lp-ui aside,
-  .lp-trilho-extra,
-  .lp-trilho > em {
+  .lp-ui aside {
     display: none;
   }
   .lp-ui-main {
     padding: 1rem;
   }
-  .lp-blk {
-    padding: 0.35rem 0.45rem;
+  .lp-kb {
+    grid-auto-columns: 11.5rem;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  .lp-kb-col {
+    scroll-snap-align: start;
   }
 }
+/* Depois de polido, o quadro pode ser arrastado de lado no toque. */
+.lp-palco[data-polido='true'] {
+  touch-action: auto;
+}
+
 
 /* -------------------------------- Seções ---------------------------------- */
 .lp-secao {

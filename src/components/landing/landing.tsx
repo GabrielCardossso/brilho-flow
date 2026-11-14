@@ -655,7 +655,7 @@ function PalcoPolido() {
             <>
               <p className="lp-convite-titulo">Esse é o painel do Brilhoflow</p>
               <p className="lp-convite-texto">
-                A agenda do dia por profissional, o estoque e o caixa, tudo na mesma tela.
+                O quadro do dia: cada carro na etapa em que está, da fila até o aviso ao cliente.
               </p>
             </>
           ) : (
@@ -690,7 +690,48 @@ function PalcoPolido() {
   );
 }
 
-/** A interface que está sob a pintura. É ilustração: fora da árvore de acessibilidade. */
+interface ColunaDoQuadro {
+  titulo: string;
+  cor: string;
+  cartoes: Array<{ placa: string; servico: string; carro: string; ativo?: boolean }>;
+}
+
+/** Amostra do quadro do dia, com os mesmos nomes de etapa do produto. */
+const QUADRO_DE_AMOSTRA: readonly ColunaDoQuadro[] = [
+  {
+    titulo: 'Na fila',
+    cor: 'var(--informativo)',
+    cartoes: [
+      { placa: 'MNO4C56', servico: 'Hidratação de couro', carro: 'Corolla Cross' },
+      { placa: 'NOP7T89', servico: 'Detalhe de motor', carro: 'Hilux' },
+    ],
+  },
+  {
+    titulo: 'Em andamento',
+    cor: 'var(--acento)',
+    cartoes: [
+      { placa: 'RTA1B23', servico: 'Polimento técnico', carro: 'Golf GTI', ativo: true },
+      { placa: 'DEF2E34', servico: 'Higienização interna', carro: 'Compass', ativo: true },
+    ],
+  },
+  {
+    titulo: 'Finalização',
+    cor: 'var(--acento)',
+    cartoes: [{ placa: 'ABC1D23', servico: 'Vitrificação cerâmica', carro: 'BMW 320i' }],
+  },
+  {
+    titulo: 'Revisão',
+    cor: 'var(--atencao)',
+    cartoes: [{ placa: 'QRS1A23', servico: 'Lavagem técnica', carro: 'Civic Touring' }],
+  },
+  {
+    titulo: 'Avisar o cliente',
+    cor: 'var(--positivo)',
+    cartoes: [{ placa: 'YZA9L01', servico: 'Polimento comercial', carro: 'Creta' }],
+  },
+];
+
+/** A interface que está sob a pintura: o quadro do dia. É ilustração, fora da árvore de acessibilidade. */
 function PainelDecorativo() {
   return (
     <div className="lp-ui" aria-hidden>
@@ -698,8 +739,9 @@ function PainelDecorativo() {
         <div className="mb-3">
           <Marca />
         </div>
-        <a className="on">Painel</a>
+        <a>Painel</a>
         <a>Agenda</a>
+        <a className="on">Quadro do dia</a>
         <a>Clientes</a>
         <a>Estoque</a>
         <a>Financeiro</a>
@@ -707,9 +749,9 @@ function PainelDecorativo() {
       <div className="lp-ui-main">
         <div className="lp-ui-topo">
           <div>
-            <h3>Hoje na oficina</h3>
+            <h3>Quadro do dia</h3>
             <span className="text-[0.82rem] text-[var(--tinta-suave)]">
-              3 profissionais · 8 atendimentos
+              Cada carro na etapa em que está, hoje
             </span>
           </div>
           <ul className="lp-ui-kpis">
@@ -724,63 +766,23 @@ function PainelDecorativo() {
             </li>
           </ul>
         </div>
-        <div className="lp-trilhos">
-          <div className="lp-trilho">
-            <em>Rafael</em>
-            <div className="lp-blk a" style={{ left: '14%', width: '38%' }}>
-              <b>Polimento técnico</b>
-              <small>Golf GTI · RTA1B23</small>
+        <div className="lp-kb">
+          {QUADRO_DE_AMOSTRA.map((coluna) => (
+            <div key={coluna.titulo} className="lp-kb-col" style={{ '--cor': coluna.cor } as CSSProperties}>
+              <header>
+                <span>{coluna.titulo}</span>
+                <em>{coluna.cartoes.length}</em>
+              </header>
+              {coluna.cartoes.map((cartao) => (
+                <div key={cartao.placa} className="lp-kb-card" data-ativo={cartao.ativo === true}>
+                  <Placa valor={cartao.placa} />
+                  <b>{cartao.servico}</b>
+                  <small>{cartao.carro}</small>
+                </div>
+              ))}
             </div>
-            <div className="lp-blk c" style={{ left: '58%', width: '24%' }}>
-              <b>Hidratação de couro</b>
-              <small>Corolla · MNO4C56</small>
-            </div>
-          </div>
-          <div className="lp-trilho">
-            <em>Camila</em>
-            <div className="lp-blk b" style={{ left: '14%', width: '17%' }}>
-              <b>Lavagem técnica</b>
-              <small>Civic · QRS1A23</small>
-            </div>
-            <div className="lp-blk a" style={{ left: '34%', width: '24%' }}>
-              <b>Higienização interna</b>
-              <small>Compass · DEF2E34</small>
-            </div>
-            <div className="lp-blk c" style={{ left: '62%', width: '34%' }}>
-              <b>Vitrificação cerâmica</b>
-              <small>BMW 320i · ABC1D23</small>
-            </div>
-          </div>
-          <div className="lp-trilho lp-trilho-extra">
-            <em>Diego</em>
-            <div className="lp-blk b" style={{ left: '18%', width: '14%' }}>
-              <b>Lavagem</b>
-              <small>Onix</small>
-            </div>
-            <div className="lp-blk c" style={{ left: '42%', width: '20%' }}>
-              <b>Detalhe de motor</b>
-              <small>Hilux</small>
-            </div>
-            <div className="lp-blk c" style={{ left: '72%', width: '24%' }}>
-              <b>Polimento comercial</b>
-              <small>Creta</small>
-            </div>
-          </div>
+          ))}
         </div>
-        <ul className="lp-legenda">
-          <li>
-            <i className="a" />
-            Em andamento
-          </li>
-          <li>
-            <i className="b" />
-            Concluído
-          </li>
-          <li>
-            <i className="c" />
-            Agendado
-          </li>
-        </ul>
       </div>
     </div>
   );
