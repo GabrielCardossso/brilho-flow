@@ -367,8 +367,8 @@ export function Landing() {
                 <a
                   key={contato.rotulo}
                   href={contato.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target={contato.href.startsWith('http') ? '_blank' : undefined}
+                  rel={contato.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   className="inline-flex items-center gap-2"
                 >
                   <Icone className="size-4" aria-hidden />
