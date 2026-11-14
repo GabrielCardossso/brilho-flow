@@ -250,6 +250,8 @@ O projeto também roda em **Cloudflare Workers** com o adaptador [OpenNext](http
 - Relatórios: o PDF é desenhado com `pdf-lib` e a planilha usa a versão "navegador" do ExcelJS, porque o renderizador anterior de PDF compilava WebAssembly em tempo de execução, o que Workers não permite.
 - Segredos do Worker (`SESSION_SECRET`) vão no painel da Cloudflare; para testar localmente copie `.dev.vars.example` para `.dev.vars`.
 - O build de produção na Cloudflare roda em Linux. No Windows funciona se `yarn` estiver no PATH.
+- Publicação a partir da máquina (sem integração com o GitHub): `npx opennextjs-cloudflare build` e `npx wrangler deploy`. O Wrangler exige uma string local de Postgres só para validar o binding: defina `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` com qualquer valor local (ela não é usada em produção). O segredo de sessão entra uma vez com `npx wrangler secret put SESSION_SECRET`.
+- Produção atual: `https://brilhoflow.gabrielcardossso.workers.dev` (Worker `brilhoflow`, Hyperdrive `brilhoflow-db`, banco Supabase em São Paulo).
 - O pacote do Worker fica por volta de 2,5 MiB compactado (limite do plano gratuito: 3 MiB; plano pago: 10 MiB).
 
 ### Servidor Node ou Vercel

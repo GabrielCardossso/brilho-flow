@@ -1,6 +1,6 @@
 {
   // Worker do Brilhoflow na Cloudflare (Next.js via OpenNext).
-  // Antes do primeiro deploy, troque o id do Hyperdrive pelo criado na sua conta.
+  // O id do Hyperdrive abaixo é da conta pessoal do Gabriel (não é segredo).
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "brilhoflow",
   "main": ".open-next/worker.js",
@@ -11,11 +11,13 @@
     "binding": "ASSETS"
   },
   "observability": { "enabled": true },
+  // Endereço público (troque ao ligar o domínio próprio).
+  "vars": { "NEXT_PUBLIC_APP_URL": "https://brilhoflow.gabrielcardossso.workers.dev" },
   // Pooler de conexões da Cloudflare, na frente do Postgres do Supabase.
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "TROQUE-PELO-ID-DO-HYPERDRIVE"
+      "id": "8b36e6be3de145f298e83c046c4d0e48"
     }
   ]
 }
