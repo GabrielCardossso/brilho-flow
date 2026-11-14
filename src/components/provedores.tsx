@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { FalhaDaApi } from '@/lib/api';
 
@@ -30,8 +30,36 @@ function criarCliente(): QueryClient {
   });
 }
 
+/**
+ * Reflexo de luz nas superfícies: um único ouvinte delegado informa onde o
+ * mouse está dentro do cartão sob ele. O brilho em si é CSS (`.superficie::after`).
+ */
+function useReflexoDasSuperficies(): void {
+  useEffect(() => {
+    if (window.matchMedia('(hover: none), (prefers-reduced-motion: reduce)').matches) return;
+    let quadro = 0;
+    const aoMover = (evento: PointerEvent) => {
+      if (quadro !== 0) return;
+      quadro = requestAnimationFrame(() => {
+        quadro = 0;
+        const alvo = (evento.target as Element | null)?.closest<HTMLElement>('.superficie');
+        if (alvo === null || alvo === undefined) return;
+        const limites = alvo.getBoundingClientRect();
+        alvo.style.setProperty('--mx', `${evento.clientX - limites.left}px`);
+        alvo.style.setProperty('--my', `${evento.clientY - limites.top}px`);
+      });
+    };
+    document.addEventListener('pointermove', aoMover, { passive: true });
+    return () => {
+      document.removeEventListener('pointermove', aoMover);
+      if (quadro !== 0) cancelAnimationFrame(quadro);
+    };
+  }, []);
+}
+
 export function Provedores({ children }: { children: ReactNode }) {
   const [cliente] = useState(criarCliente);
+  useReflexoDasSuperficies();
 
   return (
     <QueryClientProvider client={cliente}>

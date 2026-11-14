@@ -48,7 +48,7 @@ export const HEX_PADRAO = CATALOGO_ACENTOS[ACENTO_PADRAO].hex;
 
 export const MODOS = ['claro', 'escuro', 'sistema'] as const;
 export type ModoTema = (typeof MODOS)[number];
-export const MODO_PADRAO: ModoTema = 'claro';
+export const MODO_PADRAO: ModoTema = 'escuro';
 
 const HEX_VALIDO = /^#[0-9a-f]{6}$/i;
 

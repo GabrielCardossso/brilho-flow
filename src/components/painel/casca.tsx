@@ -94,7 +94,7 @@ export function Casca({
   const { data: sessao } = useSessao(sessaoInicial);
   const [menuAberto, setMenuAberto] = useState(false);
   const [indoPara, setIndoPara] = useState<string | null>(null);
-  const [modo, setModo] = useState<ModoTema>(modoInicial === 'sistema' ? 'claro' : modoInicial);
+  const [modo, setModo] = useState<ModoTema>(modoInicial === 'sistema' ? 'escuro' : modoInicial);
 
   const naoLidas = sessao?.notificacoesNaoLidas ?? 0;
   const ehSuperAdmin = papel === 'SUPER_ADMIN';
@@ -120,7 +120,7 @@ export function Casca({
   useEffect(() => {
     if (sessao === undefined) return;
     const modoDaSessao =
-      sessao.preferencias.modo === 'sistema' ? 'claro' : sessao.preferencias.modo;
+      sessao.preferencias.modo === 'sistema' ? 'escuro' : sessao.preferencias.modo;
     setModo(modoDaSessao);
     aplicarTemaNoDocumento(sessao.preferencias);
   }, [sessao]);

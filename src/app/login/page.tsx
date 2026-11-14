@@ -18,15 +18,15 @@ export default function PaginaDeLogin() {
       <aside className="feixes hidden lg:block">
         <div className="flex h-full flex-col justify-between p-12">
           <div className="hero-entrada">
-            <Marca className="!text-[var(--tinta-inversa)]" />
+            <Marca className="!text-[#eef0f4]" />
           </div>
           <div className="hero-painel max-w-md">
             <h1 className="text-balance text-4xl font-bold leading-[1.05] tracking-[-0.04em]">
               O painel da sua estética automotiva
             </h1>
             <p className="mt-4 text-lg leading-relaxed opacity-70">
-              Agenda por box, estoque e financeiro conversando entre si, para você olhar o carro e
-              não a planilha.
+              Agenda por profissional, estoque e financeiro conversando entre si, para você olhar o
+              carro e não a planilha.
             </p>
             <ul className="mt-9 space-y-3 text-sm">
               {[

@@ -111,7 +111,7 @@ async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>)
     await tx.insert(configuracao).values([
       { empresaId: plataforma.id, chave: 'tema.cor', valor: ACENTO_PADRAO },
       { empresaId: plataforma.id, chave: 'tema.cor.hex', valor: HEX_PADRAO },
-      { empresaId: plataforma.id, chave: 'tema.modo', valor: 'claro' },
+      { empresaId: plataforma.id, chave: 'tema.modo', valor: 'escuro' },
       { empresaId: plataforma.id, chave: 'sessao.inatividade.ativa', valor: 'false' },
       { empresaId: plataforma.id, chave: 'sessao.inatividade.minutos', valor: '30' },
     ]);
@@ -200,7 +200,7 @@ async function criarDemonstracao(
     await tx.insert(configuracao).values([
       { empresaId: demo.id, chave: 'tema.cor', valor: 'turbina' },
       { empresaId: demo.id, chave: 'tema.cor.hex', valor: '#06b6d4' },
-      { empresaId: demo.id, chave: 'tema.modo', valor: 'claro' },
+      { empresaId: demo.id, chave: 'tema.modo', valor: 'escuro' },
       { empresaId: demo.id, chave: 'sessao.inatividade.ativa', valor: 'false' },
       { empresaId: demo.id, chave: 'sessao.inatividade.minutos', valor: '30' },
     ]);

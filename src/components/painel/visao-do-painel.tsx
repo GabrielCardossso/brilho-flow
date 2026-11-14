@@ -26,6 +26,7 @@ import {
   YAxis,
 } from 'recharts';
 import { CabecalhoDePagina } from '@/components/painel/cabecalho-de-pagina';
+import { ChaoDaOficina } from '@/components/painel/chao-da-oficina';
 import { Botao } from '@/components/ui/botao';
 import { Cartao, CartaoCabecalho, CartaoCorpo } from '@/components/ui/cartao';
 import { Esqueleto } from '@/components/ui/esqueleto';
@@ -133,6 +134,9 @@ export function VisaoDoPainel() {
           </Botao>
         }
       />
+
+      {/* ------------------------------- Chão da oficina ----------------- */}
+      <ChaoDaOficina />
 
       {/* ------------------------------- Indicadores --------------------- */}
       <section aria-label="Indicadores do mês" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -252,7 +252,13 @@ Medido em build de produção contra Postgres local (16 conexões simultâneas):
 
 ## Identidade visual
 
-Tema claro por padrão, com modo escuro. Acento padrão **Sinal** (laranja de sinalização); a empresa com plano Pro escolhe o próprio. Tipografia: Bricolage Grotesque (títulos) e Geist (texto). A placa Mercosul é o identificador do veículo em todas as telas, e a assinatura da landing é a linha do tempo dos boxes do dia. Botões principais se preenchem a partir do ponto em que o mouse entra. Todo movimento respeita `prefers-reduced-motion`.
+A ideia é **polimento**: o sistema tira os riscos da rotina. Escuro por padrão (pintura preta sob luz), com modo claro. Acento padrão **Sinal** (laranja de sinalização); a empresa com plano Pro escolhe o próprio. Tipografia: Bricolage Grotesque (títulos), Geist (texto) e Outfit (marca). A placa Mercosul é o identificador do veículo em todas as telas.
+
+- **Landing:** o painel aparece sob uma pintura riscada que o visitante poli com o mouse (canvas; botão "Revelar tudo" e movimento reduzido mostram direto o resultado).
+- **Painel:** o "chão da oficina" mostra um cartão por profissional com o carro que ele atende agora. O cronômetro conta desde o horário **agendado**, porque o sistema não guarda a hora real de início.
+- **Superfícies que refletem:** os cartões refletem a luz seguindo o mouse; botões principais se preenchem a partir do ponto em que o mouse entra.
+
+Todo movimento respeita `prefers-reduced-motion`.
 
 ---
 
