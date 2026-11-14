@@ -69,8 +69,11 @@ export interface PreferenciasDaEmpresa {
   podePersonalizar: boolean;
 }
 
-export async function lerPreferencias(contexto: Contexto): Promise<PreferenciasDaEmpresa> {
-  const parametros = await lerParametros(contexto.empresaId);
+export async function lerPreferencias(
+  contexto: Contexto,
+  parametrosLidos?: Map<string, string>,
+): Promise<PreferenciasDaEmpresa> {
+  const parametros = parametrosLidos ?? (await lerParametros(contexto.empresaId));
   const podePersonalizar = contexto.permite('PERSONALIZACAO_TEMA');
   const tema = resolverTema(
     {
@@ -282,7 +285,7 @@ export async function criarUsuario(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'USUARIO_CRIADO',
-    detalhes: `Usuário ${criado.id} — ${dados.email}`,
+    detalhes: `Usuário ${criado.id}: ${dados.email}`,
   });
 
   return ok({ id: criado.id });
@@ -343,7 +346,7 @@ export async function atualizarUsuario(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'USUARIO_ATUALIZADO',
-    detalhes: `Usuário ${id} — ${dados.email}`,
+    detalhes: `Usuário ${id}: ${dados.email}`,
   });
 
   return ok({ id });
@@ -416,8 +419,8 @@ export async function alternarUsuarioAtivo(
 function descreverAlteracao(campo: string, atual: string | null, proposto: string | null): string {
   const de = atual === null || atual === '' ? '(vazio)' : atual;
   const para = proposto === null || proposto === '' ? '(vazio)' : proposto;
-  if (de.toLowerCase() === para.toLowerCase()) return `• ${campo}: ${para} (sem alteração)`;
-  return `• ${campo}: ${de} → ${para}`;
+  if (de.toLowerCase() === para.toLowerCase()) return `${campo}: ${para} (sem alteração)`;
+  return `${campo}: de ${de} para ${para}`;
 }
 
 export function descreverPedido(
@@ -467,7 +470,7 @@ export async function solicitarAlteracaoCadastral(
 
   if (pendente !== undefined) {
     return falha(
-      conflito('Já existe uma solicitação pendente. Aguarde a análise da EsteticaFlow.'),
+      conflito('Já existe uma solicitação pendente. Aguarde a análise do Brilhoflow.'),
     );
   }
 

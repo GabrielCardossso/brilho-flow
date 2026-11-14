@@ -1,9 +1,10 @@
+import { after } from 'next/server';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { carregarContexto } from '@/auth/contexto';
 import { Casca } from '@/components/painel/casca';
 import { tokensDeAcento } from '@/domain/tema';
-import { lerPreferencias } from '@/server/configuracoes';
+import { lerParametros, lerPreferencias } from '@/server/configuracoes';
 import { contarNaoLidas, sincronizarAlertasSeNecessario } from '@/server/notificacoes';
 
 export const dynamic = 'force-dynamic';
@@ -16,10 +17,15 @@ export default async function LayoutDoPainel({ children }: { children: ReactNode
     redirect(`/login?motivo=${motivo}`);
   }
 
-  await sincronizarAlertasSeNecessario(contexto.value);
+  // Parametros da empresa: lidos uma vez e repartidos entre quem precisa.
+  const parametros = await lerParametros(contexto.value.empresaId);
+
+  // A sincronizacao de alertas roda DEPOIS da resposta: o usuario ve a tela
+  // sem esperar um calculo que so atualiza o contador do proximo acesso.
+  after(() => sincronizarAlertasSeNecessario(contexto.value, parametros));
 
   const [preferencias, notificacoesNaoLidas] = await Promise.all([
-    lerPreferencias(contexto.value),
+    lerPreferencias(contexto.value, parametros),
     contarNaoLidas(contexto.value),
   ]);
 

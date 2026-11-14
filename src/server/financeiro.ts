@@ -407,7 +407,7 @@ export async function registrarDespesa(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'DESPESA_REGISTRADA',
-    detalhes: `${dados.descricao} — ${dados.valor}`,
+    detalhes: `${dados.descricao}: ${dados.valor}`,
   });
 
   return ok({ id: criada.id });
@@ -449,7 +449,7 @@ export async function registrarReceitaAvulsa(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'RECEITA_REGISTRADA',
-    detalhes: `${dados.descricao} — ${dados.valor}`,
+    detalhes: `${dados.descricao}: ${dados.valor}`,
   });
 
   return ok({ id: criada.id });

@@ -232,3 +232,111 @@ export function validarPagamento(
   }
   return ok(true);
 }
+
+// --------------------------------------------------------------------------
+// Etapas do quadro do dia (kanban)
+// --------------------------------------------------------------------------
+
+/**
+ * O status do atendimento (agendado, em andamento, concluído) é grosso demais
+ * para quem trabalha na oficina. A etapa detalha onde o carro está no fluxo do
+ * dia, sempre dentro de um status: o quadro nunca contradiz a máquina de estados.
+ */
+export const ETAPAS_QUADRO = [
+  'AGUARDANDO_CARRO',
+  'NA_FILA',
+  'EM_ANDAMENTO',
+  'FINALIZACAO',
+  'REVISAO',
+  'AVISAR_CLIENTE',
+  'ENTREGUE',
+] as const;
+export type EtapaQuadro = (typeof ETAPAS_QUADRO)[number];
+
+export function ehEtapaQuadro(valor: string | null | undefined): valor is EtapaQuadro {
+  return ETAPAS_QUADRO.includes((valor ?? '') as EtapaQuadro);
+}
+
+export const ROTULO_ETAPA: Readonly<Record<EtapaQuadro, string>> = {
+  AGUARDANDO_CARRO: 'Aguardando o carro',
+  NA_FILA: 'Na fila',
+  EM_ANDAMENTO: 'Em andamento',
+  FINALIZACAO: 'Finalização',
+  REVISAO: 'Revisão',
+  AVISAR_CLIENTE: 'Avisar o cliente',
+  ENTREGUE: 'Entregue',
+};
+
+export const DESCRICAO_ETAPA: Readonly<Record<EtapaQuadro, string>> = {
+  AGUARDANDO_CARRO: 'O carro ainda não chegou à oficina',
+  NA_FILA: 'O carro está aqui, esperando a vez',
+  EM_ANDAMENTO: 'O serviço está sendo feito',
+  FINALIZACAO: 'Retoques finais',
+  REVISAO: 'Conferir se ficou algum detalhe',
+  AVISAR_CLIENTE: 'Serviço pronto: comunicar o cliente',
+  ENTREGUE: 'O carro já foi entregue',
+};
+
+/** Status que cada etapa exige. */
+export const STATUS_DA_ETAPA: Readonly<Record<EtapaQuadro, StatusAgendamento>> = {
+  AGUARDANDO_CARRO: 'AGENDADO',
+  NA_FILA: 'AGENDADO',
+  EM_ANDAMENTO: 'EM_ANDAMENTO',
+  FINALIZACAO: 'EM_ANDAMENTO',
+  REVISAO: 'EM_ANDAMENTO',
+  AVISAR_CLIENTE: 'CONCLUIDO',
+  ENTREGUE: 'CONCLUIDO',
+};
+
+const ETAPA_INICIAL: Readonly<Record<Exclude<StatusAgendamento, 'CANCELADO'>, EtapaQuadro>> = {
+  AGENDADO: 'AGUARDANDO_CARRO',
+  EM_ANDAMENTO: 'EM_ANDAMENTO',
+  CONCLUIDO: 'AVISAR_CLIENTE',
+};
+
+/**
+ * Etapa que o quadro deve mostrar. Se o status mudou por outro caminho (por
+ * exemplo, "Iniciar" na agenda) e a etapa gravada já não combina com ele, vale
+ * a etapa inicial do novo status. Cancelado não aparece no quadro.
+ */
+export function etapaEfetiva(
+  status: StatusAgendamento,
+  etapaGravada: string | null | undefined,
+): EtapaQuadro | null {
+  if (status === 'CANCELADO') return null;
+  if (ehEtapaQuadro(etapaGravada) && STATUS_DA_ETAPA[etapaGravada] === status) return etapaGravada;
+  return ETAPA_INICIAL[status];
+}
+
+/**
+ * Valida o movimento de um cartão para outra etapa.
+ * - dentro do mesmo status: livre, para frente ou para trás;
+ * - de agendado para uma etapa de andamento: o atendimento é iniciado;
+ * - para as etapas de concluído: só pela conclusão do atendimento (consumo e pagamento);
+ * - voltar de status (iniciado para agendado, concluído para andamento): não existe.
+ */
+export function avaliarMovimento(
+  status: StatusAgendamento,
+  destino: EtapaQuadro,
+): Result<{ iniciar: boolean }> {
+  if (status === 'CANCELADO') {
+    return falha(erro('ESTADO_INVALIDO', 'Atendimento cancelado não faz parte do quadro.'));
+  }
+  const statusDestino = STATUS_DA_ETAPA[destino];
+  if (statusDestino === status) return ok({ iniciar: false });
+  if (status === 'AGENDADO' && statusDestino === 'EM_ANDAMENTO') return ok({ iniciar: true });
+  if (statusDestino === 'CONCLUIDO') {
+    return falha(
+      erro(
+        'ESTADO_INVALIDO',
+        'Para concluir, registre o consumo de produtos e o pagamento na conclusão do atendimento.',
+      ),
+    );
+  }
+  return falha(
+    erro(
+      'ESTADO_INVALIDO',
+      `Um atendimento ${ROTULO_STATUS[status].toLowerCase()} não volta para "${ROTULO_ETAPA[destino]}".`,
+    ),
+  );
+}

@@ -1,9 +1,66 @@
-import type { HTMLAttributes, ReactNode, ThHTMLAttributes, TdHTMLAttributes } from 'react';
+'use client';
+
+import {
+  useEffect,
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+  type ThHTMLAttributes,
+  type TdHTMLAttributes,
+} from 'react';
 import { cn } from '@/lib/utils';
 
+/** Altura da barra fixa do topo do painel: a tabela só conta como "inteira" abaixo dela. */
+const ALTURA_DA_BARRA_DO_TOPO = 68;
+
+/**
+ * A rolagem de dentro da tabela só é liberada quando o card inteiro está à vista.
+ * Antes disso a roda do mouse (ou o dedo) rola a página até a tabela aparecer por
+ * completo; quando as linhas chegam ao fim, a rolagem segue para a página.
+ */
 export function Tabela({ className, ...resto }: HTMLAttributes<HTMLTableElement>) {
+  const raiz = useRef<HTMLDivElement>(null);
+  const [liberada, setLiberada] = useState(false);
+
+  useEffect(() => {
+    const elemento = raiz.current;
+    if (elemento === null) return;
+    let quadro = 0;
+
+    const avaliar = () => {
+      quadro = 0;
+      const limites = elemento.getBoundingClientRect();
+      setLiberada(
+        limites.top >= ALTURA_DA_BARRA_DO_TOPO - 2 && limites.bottom <= window.innerHeight + 2,
+      );
+    };
+    const agendar = () => {
+      if (quadro === 0) quadro = requestAnimationFrame(avaliar);
+    };
+
+    avaliar();
+    window.addEventListener('scroll', agendar, { passive: true });
+    window.addEventListener('resize', agendar);
+    const observador = new ResizeObserver(agendar);
+    observador.observe(elemento);
+    return () => {
+      window.removeEventListener('scroll', agendar);
+      window.removeEventListener('resize', agendar);
+      observador.disconnect();
+      if (quadro !== 0) cancelAnimationFrame(quadro);
+    };
+  }, []);
+
   return (
-    <div className="w-full touch-pan-x overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+    <div
+      ref={raiz}
+      data-rolagem-liberada={liberada}
+      className={cn(
+        'w-full overflow-x-auto lg:max-h-[calc(100dvh-13rem)] rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]',
+        liberada ? 'overflow-y-auto' : 'overflow-y-hidden',
+      )}
+    >
       <table className={cn('w-full border-collapse text-sm', className)} {...resto} />
     </div>
   );
@@ -43,7 +100,8 @@ export function Coluna({
     <th
       scope="col"
       className={cn(
-        'rotulo-tecnico px-4 py-2.5 text-left',
+        // Cabeçalho fixo: os dados rolam por baixo e as colunas continuam à vista.
+        'rotulo-tecnico sticky top-0 z-10 whitespace-nowrap border-r border-[var(--borda)] bg-[var(--superficie-2)] px-4 py-2.5 text-left shadow-[inset_0_-1px_0_var(--borda)] last:border-r-0',
         numerica ? 'text-right' : undefined,
         className,
       )}
@@ -60,8 +118,8 @@ export function Celula({
   return (
     <td
       className={cn(
-        'px-4 py-3 align-middle text-[var(--tinta)]',
-        numerica ? 'numerico text-right' : undefined,
+        'border-r border-[var(--borda)] px-4 py-3 align-middle text-[var(--tinta)] last:border-r-0',
+        numerica ? 'numerico whitespace-nowrap text-right' : undefined,
         className,
       )}
       {...resto}

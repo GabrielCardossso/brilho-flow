@@ -1,4 +1,4 @@
-# REQUISITOS.md — EsteticaFlow
+# REQUISITOS.md — Brilhoflow
 
 Especificação funcional do sistema: atores, casos de uso, regras de negócio e requisitos não funcionais. É o documento de referência para validar se o software faz o que precisa fazer.
 
@@ -13,7 +13,7 @@ Especificação funcional do sistema: atores, casos de uso, regras de negócio e
 | **Visitante** | Ainda não autenticado | Landing page, planos, suporte, login |
 | **Funcionário** | Opera o dia a dia da estética | Dados da própria empresa. Sem gestão de equipe, sem configurações administrativas |
 | **Administrador** | Dono ou gerente da estética | Tudo do funcionário + equipe, tema, sessão, formas de pagamento, solicitação de alteração cadastral |
-| **Administrador da plataforma** (`SUPER_ADMIN`) | Operação da EsteticaFlow | Gestão de empresas assinantes, assinaturas, bloqueios, solicitações e auditoria global. Atravessa o gate de plano |
+| **Administrador da plataforma** (`SUPER_ADMIN`) | Operação do Brilhoflow | Gestão de empresas assinantes, assinaturas, bloqueios, solicitações e auditoria global. Atravessa o gate de plano |
 
 **Isolamento multiempresa:** toda consulta e toda escrita são filtradas por `empresaId`, derivado da sessão — nunca de parâmetro enviado pelo cliente. Um usuário não consegue, por manipulação de requisição, alcançar dados de outra empresa.
 

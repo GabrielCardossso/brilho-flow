@@ -27,6 +27,7 @@ import {
   type StatusAgendamento,
 } from '@/domain/agendamento';
 import { formatarPlaca } from '@/domain/shared/documento';
+import { Placa } from '@/components/ui/placa';
 import { formatarDuracao, formatarHora, m, paraISO } from '@/domain/shared/tempo';
 import { formatarMoeda } from '@/domain/shared/texto';
 import { useAcaoDeAgendamento, useAgenda, useProfissionais } from '@/hooks/use-agenda';
@@ -294,10 +295,12 @@ export function QuadroDaAgenda() {
                       ) : null}
                     </div>
 
-                    <p className="mt-1 text-sm text-[var(--tinta-suave)]">
-                      <span className="numerico">{formatarPlaca(item.veiculoPlaca)}</span> ·{' '}
-                      {item.veiculoModelo}
-                      {item.responsavelNome !== null ? ` · ${item.responsavelNome}` : ''}
+                    <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm text-[var(--tinta-suave)]">
+                      <Placa valor={formatarPlaca(item.veiculoPlaca)} />
+                      <span>
+                        {item.veiculoModelo}
+                        {item.responsavelNome !== null ? ` · ${item.responsavelNome}` : ''}
+                      </span>
                     </p>
 
                     <p className="mt-1 truncate text-xs text-[var(--tinta-tenue)]">

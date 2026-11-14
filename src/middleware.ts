@@ -25,7 +25,9 @@ function limitarRajada(request: NextRequest): NextResponse | null {
     'desconhecido';
   const ehLogin = pathname === '/api/auth/login';
   const ehMutacao = !['GET', 'HEAD'].includes(request.method);
-  const limite = ehLogin ? 20 : ehMutacao ? 120 : 300;
+  // Uma tela do painel dispara varias consultas e uma empresa inteira costuma
+  // sair pelo mesmo IP: os tetos de leitura e escrita precisam acomodar isso.
+  const limite = ehLogin ? 20 : ehMutacao ? 300 : 1500;
   const janelaMs = 60_000;
   const chave = `${ehLogin ? 'login' : ehMutacao ? 'mutacao' : 'consulta'}:${ip}`;
   const atual = baldesRateLimit.get(chave);

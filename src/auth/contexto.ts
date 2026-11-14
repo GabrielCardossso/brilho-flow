@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import { db } from '@/db/client';
 import { empresa as tabelaEmpresa, sessaoRevogada, usuario as tabelaUsuario } from '@/db/schema';
 import {
@@ -47,7 +48,7 @@ export interface Contexto {
  * assinatura. Feito a cada requisicao: um bloqueio aplicado pela plataforma
  * derruba o acesso na proxima acao do usuario, sem esperar expirar o cookie.
  */
-export async function carregarContexto(): Promise<Result<Contexto>> {
+async function carregarContextoSemCache(): Promise<Result<Contexto>> {
   const jar = await cookies();
   const conteudo = await lerSessao(jar.get(COOKIE_SESSAO)?.value);
 
@@ -55,45 +56,39 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
     return falha(erro('NAO_AUTENTICADO', 'Sessão expirada. Entre novamente.'));
   }
 
-  const [[registro], [conta], [revogada]] = await Promise.all([
-    db.select().from(tabelaEmpresa).where(eq(tabelaEmpresa.id, conteudo.empresaId)).limit(1),
-    db
-      .select({
-        empresaId: tabelaUsuario.empresaId,
-        nome: tabelaUsuario.nome,
-        email: tabelaUsuario.email,
-        papel: tabelaUsuario.papel,
-        ativo: tabelaUsuario.ativo,
-        senhaHash: tabelaUsuario.senhaHash,
-      })
-      .from(tabelaUsuario)
-      .where(eq(tabelaUsuario.id, conteudo.usuarioId))
-      .limit(1),
-    conteudo.jti === null
-      ? Promise.resolve([] as Array<{ jti: string }>)
-      : db
-          .select({ jti: sessaoRevogada.jti })
-          .from(sessaoRevogada)
-          .where(eq(sessaoRevogada.jti, conteudo.jti))
-          .limit(1),
-  ]);
-
-  if (registro === undefined) {
-    return falha(erro('NAO_AUTENTICADO', 'Empresa da sessão não encontrada.'));
-  }
+  // Uma unica ida ao banco (usuario + empresa + revogacao). Eram tres consultas
+  // por requisicao, e em producao elas rodavam em fila: cada uma pesa o RTT.
+  const [linha] = await db
+    .select({
+      empresa: tabelaEmpresa,
+      nome: tabelaUsuario.nome,
+      email: tabelaUsuario.email,
+      papel: tabelaUsuario.papel,
+      ativo: tabelaUsuario.ativo,
+      senhaHash: tabelaUsuario.senhaHash,
+      revogada: sessaoRevogada.jti,
+    })
+    .from(tabelaUsuario)
+    .innerJoin(tabelaEmpresa, eq(tabelaEmpresa.id, tabelaUsuario.empresaId))
+    .leftJoin(sessaoRevogada, eq(sessaoRevogada.jti, conteudo.jti ?? ''))
+    .where(eq(tabelaUsuario.id, conteudo.usuarioId))
+    .limit(1);
 
   // O cookie so prova que houve um login. Quem manda e o banco: usuario
   // arquivado, movido de empresa ou com a senha trocada perde a sessao agora,
   // e o papel vigente (promocao ou rebaixamento) vale na proxima requisicao.
   if (
-    revogada !== undefined ||
-    conta === undefined ||
-    !conta.ativo ||
-    conta.empresaId !== conteudo.empresaId ||
-    versaoDaSenha(conta.senhaHash) !== conteudo.versao
+    linha === undefined ||
+    linha.revogada !== null ||
+    !linha.ativo ||
+    linha.empresa.id !== conteudo.empresaId ||
+    versaoDaSenha(linha.senhaHash) !== conteudo.versao
   ) {
     return falha(erro('NAO_AUTENTICADO', 'Sessão expirada. Entre novamente.'));
   }
+
+  const registro = linha.empresa;
+  const conta = linha;
 
   const statusAtual = recalcularStatus(
     {
@@ -157,6 +152,13 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
     permite: (recurso: Recurso) => permiteRecurso(empresa.plano, usuario.papel, recurso),
   });
 }
+
+/**
+ * Cache por renderizacao: layout e pagina do mesmo pedido compartilham o
+ * resultado, sem repetir a consulta. Fora de uma renderizacao (rotas de API)
+ * cada chamada executa normalmente.
+ */
+export const carregarContexto = cache(carregarContextoSemCache);
 
 export function exigirRecurso(contexto: Contexto, recurso: Recurso): Result<true> {
   if (contexto.permite(recurso)) return ok(true);

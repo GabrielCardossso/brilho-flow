@@ -1,0 +1,695 @@
+/* ==========================================================================
+   Landing Brilhoflow — a pintura riscada que o visitante polia.
+   Sempre escura (a marca é pintura preta); tokens vêm do wrapper data-modo.
+   Transform e opacity apenas; reduced-motion entrega tudo já pronto.
+   ========================================================================== */
+
+.lp {
+  --lp-ac: var(--acento);
+  background: var(--superficie-0);
+  color: var(--tinta);
+}
+.lp-contem {
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .lp-contem {
+    padding-inline: 2rem;
+  }
+}
+
+/* -------------------------------- Navegação ------------------------------- */
+.lp-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--superficie-0) 80%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--borda);
+}
+.lp-nav-link {
+  color: var(--tinta-suave);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: color var(--duracao-curta) var(--ease-mecanico);
+}
+.lp-nav-link:hover {
+  color: var(--tinta);
+}
+
+/* ---------------------------------- Hero ---------------------------------- */
+.lp-hero {
+  position: relative;
+  padding: 7.5rem 0 3rem;
+}
+.lp-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.6rem;
+}
+.lp-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 7.6vw, 6.4rem);
+  font-weight: 800;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  max-width: 12ch;
+}
+.lp-h1 em {
+  font-style: normal;
+  color: var(--acento);
+}
+.lp-sub {
+  max-width: 42ch;
+  color: var(--tinta-suave);
+  font-size: 1.12rem;
+  line-height: 1.55;
+  margin-bottom: 1.6rem;
+}
+@keyframes lp-sobe {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lp-entra {
+  animation: lp-sobe 700ms var(--ease-mecanico) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* --------------------------------- Palco ---------------------------------- */
+.lp-palco {
+  --mx: 50%;
+  --my: 30%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-top: 1rem;
+  height: min(58vh, 520px);
+  min-height: 380px;
+  border-radius: 1.9rem;
+  background: #0a0c11;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 50px 120px -40px #000;
+  /* No toque, rolar na vertical continua rolando; o arrasto lateral poli. */
+  touch-action: pan-y;
+}
+.lp-palco canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  transition: opacity 1s var(--ease-brilho);
+}
+/* Antes de os riscos serem desenhados (hidratação), o painel fica oculto, sem piscar. */
+.lp-palco[data-pronto='false'] .lp-ui {
+  visibility: hidden;
+}
+.lp-palco[data-polido='true'] canvas {
+  opacity: 0;
+  pointer-events: none;
+}
+.lp-brilho {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    460px circle at var(--mx) var(--my),
+    rgb(255 255 255 / 0.15),
+    transparent 62%
+  );
+}
+/* Convite acima do palco: diz o que fazer, em palavras simples. */
+.lp-convite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-top: 2.6rem;
+  transition: opacity 600ms var(--ease-mecanico);
+}
+.lp-convite-titulo {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.lp-convite-texto {
+  margin-top: 0.15rem;
+  color: var(--tinta-suave);
+  font-size: 0.95rem;
+}
+.lp-so-toque {
+  display: none;
+}
+@media (hover: none) {
+  .lp-so-mouse {
+    display: none;
+  }
+  .lp-so-toque {
+    display: inline;
+  }
+}
+.lp-revelar-tudo {
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.6rem;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--borda-forte);
+  transition:
+    color var(--duracao-curta) var(--ease-mecanico),
+    box-shadow var(--duracao-curta) var(--ease-mecanico);
+}
+.lp-revelar-tudo:hover {
+  color: var(--tinta);
+  box-shadow: inset 0 0 0 1px var(--tinta-tenue);
+}
+.lp-revelar-tudo:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 3px;
+}
+
+/* painel que aparece sob a pintura */
+.lp-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  background: linear-gradient(160deg, #10131a, #080a0e 70%);
+}
+.lp-ui aside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 0.9rem;
+  border-right: 1px solid var(--borda);
+}
+.lp-ui aside a {
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.6rem;
+  color: var(--tinta-suave);
+  font-size: 0.84rem;
+}
+.lp-ui aside a.on {
+  background: #fff;
+  color: #07080b;
+  font-weight: 600;
+}
+.lp-ui-main {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.2rem 1.5rem;
+}
+.lp-ui-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+.lp-ui-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+}
+.lp-ui-kpis li {
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.6rem;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+.lp-ui-kpis b {
+  margin-right: 0.2rem;
+  color: #fff;
+  font-weight: 700;
+}
+.lp-ui-topo h3 {
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+/* Quadro Kanban que aparece sob a pintura */
+.lp-kb {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: start;
+}
+.lp-kb-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.85rem 0.55rem 0.55rem;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 0.035);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.lp-kb-col::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: 0.8rem 0.8rem 0 0;
+  background: var(--cor, var(--tinta-tenue));
+}
+.lp-kb-col header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.lp-kb-col header span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp-kb-col header em {
+  min-width: 1.3rem;
+  padding: 0 0.35rem;
+  border-radius: 99px;
+  background: rgb(255 255 255 / 0.08);
+  font-style: normal;
+  font-size: 0.68rem;
+  text-align: center;
+}
+.lp-kb-card {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.55rem;
+  border-radius: 0.65rem;
+  background: rgb(255 255 255 / 0.07);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: #fff;
+}
+.lp-kb-card[data-ativo='true'] {
+  background: var(--acento);
+  color: var(--acento-texto);
+  box-shadow: none;
+}
+.lp-kb-card b {
+  display: block;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp-kb-card small {
+  display: block;
+  overflow: hidden;
+  font-size: 0.66rem;
+  opacity: 0.72;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp-kb-card .placa {
+  justify-self: start;
+}
+
+/* Celular: sem barra lateral; as colunas deslizam de lado, uma e meia por vez. */
+@media (max-width: 800px) {
+  .lp-ui {
+    grid-template-columns: 1fr;
+  }
+  .lp-ui aside {
+    display: none;
+  }
+  .lp-ui-main {
+    padding: 1rem;
+  }
+  .lp-kb {
+    grid-auto-columns: 11.5rem;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  .lp-kb-col {
+    scroll-snap-align: start;
+  }
+}
+/* Depois de polido, o quadro pode ser arrastado de lado no toque. */
+.lp-palco[data-polido='true'] {
+  touch-action: auto;
+}
+
+
+/* -------------------------------- Seções ---------------------------------- */
+.lp-secao {
+  padding: 6rem 0;
+}
+@media (min-width: 1024px) {
+  .lp-secao {
+    padding: 8rem 0;
+  }
+}
+.lp-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  max-width: 16ch;
+}
+.lp-texto {
+  color: var(--tinta-suave);
+  line-height: 1.6;
+  max-width: 46ch;
+}
+.lp-faixa-cor {
+  background: var(--superficie-1);
+  border-block: 1px solid var(--borda);
+}
+.lp-js .lp-revelar:not(.visto) {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+}
+.lp-revelar {
+  transition:
+    opacity 640ms var(--ease-mecanico),
+    transform 640ms var(--ease-mecanico);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* ------------------------------ Chão da oficina --------------------------- */
+.lp-chao {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2.6rem;
+}
+@media (min-width: 900px) {
+  .lp-chao {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+.lp-equipe {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 700px) {
+  .lp-equipe {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.lp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-height: 20rem;
+  padding: 1.25rem;
+  border-radius: 1.4rem;
+}
+.lp-card > * {
+  position: relative;
+  z-index: 1;
+}
+.lp-card-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.lp-vivo {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--positivo);
+  animation: lp-pulsa 1.8s infinite;
+}
+@keyframes lp-pulsa {
+  0% {
+    box-shadow: 0 0 0 0 rgb(61 220 151 / 0.55);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px rgb(61 220 151 / 0);
+  }
+}
+.lp-anel {
+  position: relative;
+  width: 8rem;
+  height: 8rem;
+  margin: 0.15rem auto 0;
+}
+.lp-anel svg {
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+}
+.lp-anel circle {
+  fill: none;
+  stroke-width: 9;
+}
+.lp-anel .f {
+  stroke: rgb(255 255 255 / 0.08);
+}
+.lp-anel .p {
+  stroke: var(--acento);
+  transition: stroke-dashoffset 1.6s var(--ease-brilho);
+}
+.lp-anel > div {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+.lp-anel b {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.lp-anel small {
+  font-size: 0.72rem;
+  color: var(--tinta-tenue);
+}
+.lp-card-nome {
+  text-align: center;
+}
+.lp-card-nome b {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.lp-card-nome small {
+  color: var(--tinta-suave);
+  font-size: 0.82rem;
+}
+.lp-card-prox {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--borda);
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+}
+.lp-lado {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+.lp-num {
+  padding: 1.35rem;
+  border-radius: 1.4rem;
+}
+.lp-num > * {
+  position: relative;
+  z-index: 1;
+}
+.lp-num small {
+  color: var(--tinta-suave);
+  font-size: 0.82rem;
+}
+.lp-num .v {
+  margin: 0.5rem 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 2.9rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.lp-barra {
+  height: 7px;
+  margin-top: 0.35rem;
+  border-radius: 9px;
+  background: rgb(255 255 255 / 0.08);
+  overflow: hidden;
+}
+.lp-barra > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+/* --------------------------- Passos e planos ------------------------------- */
+.lp-passos {
+  display: grid;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+@media (min-width: 900px) {
+  .lp-passos {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.lp-passo {
+  padding: 1.3rem;
+  border-radius: 1.3rem;
+  background: var(--superficie-0);
+  border: 1px solid var(--borda);
+}
+.lp-passo h3 {
+  margin-top: 0.8rem;
+  font-size: 1.1rem;
+}
+.lp-passo p {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--tinta-suave);
+}
+.lp-passo-cena {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.8rem;
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  font-size: 0.78rem;
+}
+.lp-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.lp-mini + .lp-mini {
+  margin-top: 0.55rem;
+}
+.lp-mini-barra {
+  height: 6px;
+  margin-top: 0.5rem;
+  border-radius: 99px;
+  background: var(--superficie-3);
+  overflow: hidden;
+}
+.lp-mini-barra > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--acento);
+  transform-origin: left;
+  transform: scaleX(var(--v, 0.5));
+}
+.lp-plano {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.8rem;
+  border-radius: 1.5rem;
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+}
+.lp-plano[data-destaque='true'] {
+  background: var(--superficie-2);
+  border-color: var(--acento);
+  box-shadow: 0 30px 80px -40px rgb(var(--acento-rgb) / 0.55);
+}
+.lp-plano-mudo {
+  color: var(--tinta-tenue);
+}
+.lp-preco {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+.lp-final {
+  position: relative;
+  overflow: hidden;
+  padding: 4.5rem 1.5rem;
+  border-radius: 2rem;
+  text-align: center;
+  background: var(--superficie-1);
+  box-shadow: inset 0 0 0 1px var(--borda);
+}
+.lp-final::before,
+.lp-final::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  transform: skewX(-16deg);
+  pointer-events: none;
+  animation: lp-feixe 7s ease-in-out infinite;
+}
+.lp-final::before {
+  left: 12%;
+  width: 14%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.1), transparent);
+}
+.lp-final::after {
+  left: 62%;
+  width: 5%;
+  background: linear-gradient(90deg, transparent, rgb(var(--acento-rgb) / 0.45), transparent);
+  animation-delay: -2.4s;
+}
+@keyframes lp-feixe {
+  0%,
+  100% {
+    transform: translateX(0) skewX(-16deg);
+  }
+  50% {
+    transform: translateX(46px) skewX(-16deg);
+  }
+}
+.lp-final > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-js .lp-revelar:not(.visto) {
+    opacity: 1;
+    transform: none;
+  }
+  .lp-final::before,
+  .lp-final::after {
+    animation: none;
+  }
+}

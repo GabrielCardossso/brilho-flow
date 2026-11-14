@@ -22,7 +22,7 @@ export default function ErroGlobal({
           Alguma coisa saiu do lugar
         </h1>
         <p className="mt-2 text-sm text-[var(--tinta-suave)]">
-          O erro foi registrado. Tente novamente — se persistir, fale com o suporte.
+          O erro foi registrado. Tente novamente. Se persistir, fale com o suporte.
         </p>
         <button
           type="button"

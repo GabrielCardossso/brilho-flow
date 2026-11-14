@@ -1,4 +1,4 @@
-# EsteticaFlow
+# Brilhoflow
 
 **ERP/SaaS de gestão para empresas de estética automotiva.** Agenda, clientes, veículos, catálogo de serviços, estoque, financeiro e relatórios em um único painel, com isolamento multiempresa e planos de assinatura.
 
@@ -66,6 +66,7 @@ Validadas por Zod no boot (`src/env.ts`). Ausência ou formato inválido derruba
 | `DATABASE_URL` | ✅ | Conexão PostgreSQL. Em produção, use o endpoint do **pooler** |
 | `SESSION_SECRET` | ✅ | Segredo de assinatura do cookie de sessão. Mínimo de 32 caracteres |
 | `NEXT_PUBLIC_APP_URL` | — | URL pública. Padrão: `http://localhost:3000` |
+| `DATABASE_POOL_MAX` | — | Conexões por instância (1 a 20). Padrão: 4 em produção, 5 em desenvolvimento |
 | `NODE_ENV` | — | Definida pelo runtime |
 | `SEED_SUPER_ADMIN_EMAIL` | seed | E-mail do administrador da plataforma |
 | `SEED_SUPER_ADMIN_SENHA` | seed | Senha inicial — troque após o primeiro acesso |
@@ -237,7 +238,39 @@ Preparado para **Vercel**. Todas as rotas de API declaram `runtime = 'nodejs'`.
 2. Rode `yarn db:migrate` no passo de deploy ou manualmente antes de publicar.
 3. Rode `yarn db:seed` uma única vez, no primeiro deploy.
 
-Se estiver atrás de PgBouncer em modo *transaction*, o driver já vai com `prepare: false` e pool de 1 conexão em produção — não altere sem medir.
+Se estiver atrás de PgBouncer em modo *transaction*, o driver já vai com `prepare: false`. O pool é de **4 conexões por instância** em produção (`DATABASE_POOL_MAX` ajusta, de 1 a 20): com 1 conexão, as consultas paralelas de uma tela rodavam em fila. Se o plano do banco limitar conexões, reduza.
+
+### Desempenho
+
+Medido em build de produção contra Postgres local (16 conexões simultâneas): ver a seção de medições abaixo. O que mudou:
+
+- A cada requisição autenticada, usuário, empresa e revogação de sessão vêm em **uma** consulta (eram três).
+- O layout do painel lê os parâmetros da empresa uma vez e roda a sincronização de alertas **depois** da resposta (`after`).
+- Trocar de aba: `loading.tsx` mostra o esqueleto no mesmo instante do clique, o menu pré-carrega os dados da aba ao passar o mouse ou focar, e uma barra fina indica a navegação em curso.
+- O limite de requisições por IP no middleware subiu (leitura: 1500/min; escrita: 300/min), porque uma empresa inteira costuma sair pelo mesmo IP.
+- `yarn dev` recompila cada página na primeira visita e é **muito** mais lento que produção. Para medir tempo de resposta use `yarn build && yarn start`.
+
+## Identidade visual
+
+A ideia é **polimento**: o sistema tira os riscos da rotina. Escuro por padrão (pintura preta sob luz), com modo claro. Acento padrão **Azul**; a empresa com plano Pro escolhe o próprio. Tipografia: Bricolage Grotesque (títulos), Geist (texto) e Outfit (marca). A placa Mercosul é o identificador do veículo em todas as telas.
+
+- **Landing:** o painel aparece sob uma pintura riscada que o visitante poli com o mouse (canvas; botão "Revelar tudo" e movimento reduzido mostram direto o resultado).
+- **Painel:** o "chão da oficina" mostra um cartão por profissional com o carro que ele atende agora. O cronômetro conta desde o horário **agendado**, porque o sistema não guarda a hora real de início.
+- **Superfícies que refletem:** os cartões refletem a luz seguindo o mouse; botões principais se preenchem a partir do ponto em que o mouse entra.
+
+Todo movimento respeita `prefers-reduced-motion`.
+
+---
+
+## Quadro do dia
+
+Em Operação, o **Quadro do dia** mostra os atendimentos de hoje em sete etapas: Aguardando o carro, Na fila, Em andamento, Finalização, Revisão, Avisar o cliente e Entregue. Cada cartão avança com um botão ou arrastando.
+
+- A etapa **detalha** o status, nunca o contradiz: as duas primeiras são "agendado", as três seguintes "em andamento" e as duas últimas "concluído". Mover um cartão de "agendado" para uma etapa de andamento inicia o atendimento, com a mesma regra do botão Iniciar da agenda.
+- Concluir **não** acontece arrastando: exige o consumo de produtos e o pagamento. O botão "Concluir atendimento" abre a conclusão de sempre.
+- Não se volta de status (iniciado não vira agendado, concluído não reabre). Dentro do mesmo status, vai-se e volta-se livremente.
+- Se o status muda por outro caminho (por exemplo, Iniciar na agenda), a etapa se ajusta sozinha. Cancelados não aparecem.
+- Persistência: coluna `etapa` em `agendamento` (migração 0006), nula significa a etapa inicial do status.
 
 ---
 

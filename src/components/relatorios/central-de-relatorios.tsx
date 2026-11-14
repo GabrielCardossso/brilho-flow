@@ -142,7 +142,7 @@ export function CentralDeRelatorios() {
               rotulo="Saldo"
               valor={formatarMoeda(data.resumo.saldo)}
               detalhe={
-                data.resumo.margem === null ? 'Margem —' : `Margem de ${data.resumo.margem}%`
+                data.resumo.margem === null ? 'Sem margem' : `Margem de ${data.resumo.margem}%`
               }
               tom={Number(data.resumo.saldo) >= 0 ? 'positivo' : 'critico'}
             />

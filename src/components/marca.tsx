@@ -1,43 +1,32 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Símbolo da marca: um velocímetro estilizado com a agulha na faixa de
- * trabalho. Desenhado em SVG para escalar sem perda e herdar o acento.
+ * Símbolo do Brilhoflow: um "m" deitado, sem a haste. As duas corcovas viram as
+ * barrigas do B (a de baixo um pouco maior), ligadas pela barra do meio, e o
+ * símbolo fica aberto à esquerda, como o G da Getel: arcos e barras com cortes
+ * retos e espessura única. Usa o acento da empresa e funciona em qualquer fundo.
  */
 export function Simbolo({ className }: { className?: string | undefined }) {
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox="0 0 44 44"
       fill="none"
       aria-hidden
       className={cn('size-8', className)}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <circle
-        cx="16"
-        cy="16"
-        r="14"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeOpacity="0.28"
-      />
-      <path
-        d="M4.6 21.4A13 13 0 0 1 16 3a13 13 0 0 1 11.4 18.4"
-        stroke="var(--acento-ativo)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M16 16.5 22.5 10"
-        stroke="currentColor"
-        strokeWidth="2.25"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="16.5" r="2.5" fill="var(--acento-ativo)" />
+      <g fill="var(--acento)" transform="translate(8.95 2) scale(.078125)">
+        <path d="M0 0H190A140 140 0 0 1 190 280H0V224H190A84 84 0 0 0 190 56H0Z" />
+        <path d="M0 224H190A144 144 0 0 1 190 512H0V456H190A88 88 0 0 0 190 280H0Z" />
+      </g>
     </svg>
   );
 }
 
+/**
+ * Assinatura do Brilhoflow. Nunca junta o símbolo e o nome: ou aparece só o
+ * nome (padrão) ou só o símbolo (`compacta`, para espaços pequenos e favicon).
+ */
 export function Marca({
   className,
   compacta = false,
@@ -45,14 +34,15 @@ export function Marca({
   className?: string | undefined;
   compacta?: boolean | undefined;
 }) {
+  if (compacta) return <Simbolo className={cn('size-8', className)} />;
   return (
-    <span className={cn('flex items-center gap-2.5 text-[var(--tinta)]', className)}>
-      <Simbolo className={compacta ? 'size-7' : 'size-8'} />
-      {!compacta ? (
-        <span className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">
-          Estetica<span className="text-[var(--acento-ativo)]">Flow</span>
-        </span>
-      ) : null}
+    <span
+      className={cn(
+        'font-[family-name:var(--font-marca)] text-[1.5rem] font-semibold leading-none tracking-[-0.03em] text-[var(--tinta)]',
+        className,
+      )}
+    >
+      Brilho<span className="text-[var(--acento-ativo)]">flow</span>
     </span>
   );
 }

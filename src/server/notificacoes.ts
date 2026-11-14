@@ -3,6 +3,7 @@ import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import { notificacao } from '@/db/schema';
 import { precisaReativacao } from '@/domain/cliente';
+import { descreverSaldo } from '@/domain/estoque';
 import { diasEmAtraso } from '@/domain/plano';
 import { falha, naoEncontrado, ok, type Result } from '@/domain/result';
 import { agora, hojeISO } from '@/domain/shared/tempo';
@@ -50,7 +51,7 @@ async function criar(entrada: EntradaNotificacao): Promise<number | null> {
 
   if (!novaSempre && referenciaTipo !== null && referenciaId !== null) {
     const [existente] = await db
-      .select({ id: notificacao.id })
+      .select({ id: notificacao.id, titulo: notificacao.titulo, mensagem: notificacao.mensagem })
       .from(notificacao)
       .where(
         and(
@@ -62,7 +63,18 @@ async function criar(entrada: EntradaNotificacao): Promise<number | null> {
         ),
       )
       .limit(1);
-    if (existente !== undefined) return null;
+    if (existente !== undefined) {
+      // O aviso descreve o estado atual: mantém o texto em dia sem reabrir um alerta lido.
+      const tituloNovo = truncar(titulo, 150);
+      const mensagemNova = truncar(mensagem, 1000);
+      if (existente.titulo !== tituloNovo || existente.mensagem !== mensagemNova) {
+        await db
+          .update(notificacao)
+          .set({ titulo: tituloNovo, mensagem: mensagemNova })
+          .where(eq(notificacao.id, existente.id));
+      }
+      return null;
+    }
   }
 
   const [criada] = await db
@@ -165,7 +177,7 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
         empresaId: contexto.empresaId,
         tipo: 'ESTOQUE_BAIXO',
         titulo: `Estoque baixo: ${alerta.nome}`,
-        mensagem: `Saldo atual de ${alerta.quantidadeAtual} ${alerta.unidadeMedida} (mínimo ${alerta.quantidadeMinima}). Reponha para não interromper atendimentos.`,
+        mensagem: `Restam ${descreverSaldo(alerta.quantidadeAtual, alerta.unidadeMedida)} em estoque e o mínimo definido é ${descreverSaldo(alerta.quantidadeMinima, alerta.unidadeMedida)}. Reponha para não interromper atendimentos.`,
         referenciaTipo: 'PRODUTO',
         referenciaId: alerta.produtoId,
         acaoUrl: '/painel/estoque',
@@ -213,10 +225,13 @@ const INTERVALO_SINCRONIZACAO_MS = 5 * 60 * 1000;
  * os alertas sao sincronizados no maximo uma vez a cada cinco minutos por
  * empresa. Falha aqui nunca derruba a tela.
  */
-export async function sincronizarAlertasSeNecessario(contexto: Contexto): Promise<void> {
+export async function sincronizarAlertasSeNecessario(
+  contexto: Contexto,
+  parametrosLidos?: Map<string, string>,
+): Promise<void> {
   if (contexto.usuario.ehSuperAdmin) return;
   try {
-    const parametros = await lerParametros(contexto.empresaId);
+    const parametros = parametrosLidos ?? (await lerParametros(contexto.empresaId));
     const ultima = Date.parse(parametros.get(CHAVE_ULTIMA_SINCRONIZACAO) ?? '');
     if (Number.isFinite(ultima) && agora().getTime() - ultima < INTERVALO_SINCRONIZACAO_MS) return;
 

@@ -38,6 +38,8 @@ export const agendamento = pgTable(
     /** Soma dos tempos estimados dos servicos, congelada na criacao. */
     duracaoMinutos: numeric('duracao_minutos', { precision: 10, scale: 0 }).notNull(),
     status: statusAgendamentoEnum('status').notNull().default('AGENDADO'),
+    /** Etapa do quadro do dia; detalha o status e pode ser nula (vale a etapa inicial). */
+    etapa: varchar('etapa', { length: 20 }),
     observacoes: varchar('observacoes', { length: 500 }),
     subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
     desconto: numeric('desconto', { precision: 10, scale: 2 }).notNull().default('0'),

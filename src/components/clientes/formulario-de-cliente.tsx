@@ -72,7 +72,7 @@ export function FormularioDeCliente({
         ? VAZIO
         : {
             nome: inicial.nome,
-            cpfCnpj: formatarCpfCnpj(inicial.cpfCnpj) === '—' ? '' : (inicial.cpfCnpj ?? ''),
+            cpfCnpj: formatarCpfCnpj(inicial.cpfCnpj) === '-' ? '' : (inicial.cpfCnpj ?? ''),
             telefone: inicial.telefone,
             email: inicial.email ?? '',
             cep: inicial.cep ?? '',

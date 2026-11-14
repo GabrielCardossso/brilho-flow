@@ -17,14 +17,19 @@ import {
 } from '@/db/schema';
 import {
   avaliarConflito,
+  avaliarMovimento,
   calcularTotais,
+  etapaEfetiva,
   falhaDeConflito,
+  ROTULO_ETAPA,
   ROTULO_STATUS,
+  STATUS_DA_ETAPA,
   STATUS_OCUPAM_AGENDA,
   transicionar,
   validarDataHora,
   validarPagamento,
   type AcaoAgendamento,
+  type EtapaQuadro,
   type JanelaAgendamento,
   type StatusAgendamento,
 } from '@/domain/agendamento';
@@ -59,6 +64,8 @@ export interface AgendamentoDaLista {
   duracaoMinutos: number;
   status: StatusAgendamento;
   statusRotulo: string;
+  /** Etapa do quadro do dia; nula quando cancelado. */
+  etapa: EtapaQuadro | null;
   subtotal: string;
   desconto: string;
   total: string;
@@ -168,6 +175,7 @@ export async function listarAgenda(
       dataHora: agendamento.dataHora,
       duracaoMinutos: agendamento.duracaoMinutos,
       status: agendamento.status,
+      etapaGravada: agendamento.etapa,
       subtotal: agendamento.subtotal,
       desconto: agendamento.desconto,
       total: agendamento.total,
@@ -205,6 +213,7 @@ export async function listarAgenda(
       dataHora: new Date(registro.dataHora).toISOString(),
       duracaoMinutos: Number(registro.duracaoMinutos),
       statusRotulo: ROTULO_STATUS[registro.status],
+      etapa: etapaEfetiva(registro.status, registro.etapaGravada),
       servicos: servicosPorAgendamento.get(registro.id) ?? [],
     }))
     .filter((item) => {
@@ -237,6 +246,7 @@ export async function obterAgendamento(
       dataHora: agendamento.dataHora,
       duracaoMinutos: agendamento.duracaoMinutos,
       status: agendamento.status,
+      etapaGravada: agendamento.etapa,
       subtotal: agendamento.subtotal,
       desconto: agendamento.desconto,
       total: agendamento.total,
@@ -283,6 +293,7 @@ export async function obterAgendamento(
     dataHora: new Date(registro.dataHora).toISOString(),
     duracaoMinutos: Number(registro.duracaoMinutos),
     statusRotulo: ROTULO_STATUS[registro.status],
+    etapa: etapaEfetiva(registro.status, registro.etapaGravada),
     servicos: servicos.get(id) ?? [],
     receita: pagamento ?? null,
   });
@@ -454,7 +465,7 @@ export async function criarAgendamento(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'AGENDAMENTO_CRIADO',
-    detalhes: `Agendamento ${criado.id} — ${servicosSelecionados.map((s) => s.nome).join(', ')}`,
+    detalhes: `Agendamento ${criado.id}: ${servicosSelecionados.map((s) => s.nome).join(', ')}`,
   });
 
   return ok({ id: criado.id });
@@ -527,11 +538,70 @@ export async function mudarStatus(
     acao: acao === 'INICIAR' ? 'AGENDAMENTO_INICIADO' : 'AGENDAMENTO_CANCELADO',
     detalhes:
       resultado.parcelasRemovidas > 0
-        ? `Agendamento ${id} — ${resultado.parcelasRemovidas} parcela(s) em aberto removida(s)`
+        ? `Agendamento ${id}: ${resultado.parcelasRemovidas} parcela(s) em aberto removida(s)`
         : `Agendamento ${id}`,
   });
 
   return ok({ id, status: destino.value });
+}
+
+/**
+ * Move o cartão do quadro do dia para outra etapa. Dentro do mesmo status a
+ * troca é livre; sair de agendado para uma etapa de andamento inicia o
+ * atendimento (mesma regra e mesmo compare-and-set do "Iniciar"). Concluir não
+ * passa por aqui: exige consumo de produtos e pagamento.
+ */
+export async function moverEtapa(
+  contexto: Contexto,
+  id: number,
+  destino: EtapaQuadro,
+): Promise<Result<{ id: number; etapa: EtapaQuadro; status: StatusAgendamento }>> {
+  const acesso = exigirRecurso(contexto, 'AGENDA');
+  if (!acesso.ok) return acesso;
+
+  const [atual] = await db
+    .select({ id: agendamento.id, status: agendamento.status })
+    .from(agendamento)
+    .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)))
+    .limit(1);
+
+  if (atual === undefined) return falha(naoEncontrado('Agendamento não encontrado.'));
+
+  const movimento = avaliarMovimento(atual.status, destino);
+  if (!movimento.ok) return movimento;
+
+  let statusFinal = atual.status;
+  if (movimento.value.iniciar) {
+    const iniciado = await mudarStatus(contexto, id, 'INICIAR');
+    if (!iniciado.ok) return iniciado;
+    statusFinal = iniciado.value.status;
+  }
+
+  // Só grava se o status continua compatível com a etapa de destino.
+  const [alterado] = await db
+    .update(agendamento)
+    .set({ etapa: destino })
+    .where(
+      and(
+        eq(agendamento.id, id),
+        eq(agendamento.empresaId, contexto.empresaId),
+        eq(agendamento.status, STATUS_DA_ETAPA[destino]),
+      ),
+    )
+    .returning({ id: agendamento.id });
+
+  if (alterado === undefined) {
+    return falha(conflito('Este atendimento foi alterado por outra pessoa. Atualize a tela.'));
+  }
+
+  await registrar({
+    empresaId: contexto.empresaId,
+    usuarioId: contexto.usuario.usuarioId,
+    acao: 'AGENDAMENTO_ETAPA',
+    detalhes: `Agendamento ${id}: ${ROTULO_ETAPA[destino]}`,
+  });
+
+  return ok({ id, etapa: destino, status: statusFinal });
 }
 
 /**

@@ -15,42 +15,36 @@ export default function PaginaDeLogin() {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       {/* Painel lateral: contexto de marca, sem competir com o formulário. */}
-      <aside className="relative hidden overflow-hidden border-r border-[var(--borda)] lg:block">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-50"
-          style={{
-            background:
-              'radial-gradient(70% 50% at 30% 20%, rgb(var(--acento-rgb) / 0.22), transparent 70%)',
-          }}
-        />
-        <div className="relative flex h-full flex-col justify-between p-12">
-          <Marca />
-          <div className="max-w-md">
-            <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight text-[var(--tinta)]">
+      <aside className="feixes hidden lg:block">
+        <div className="flex h-full flex-col justify-between p-12">
+          <div className="hero-entrada">
+            <Marca className="!text-[#eef0f4]" />
+          </div>
+          <div className="hero-painel max-w-md">
+            <h1 className="text-balance text-4xl font-bold leading-[1.05] tracking-[-0.04em]">
               O painel da sua estética automotiva
             </h1>
-            <p className="mt-4 text-lg leading-relaxed text-[var(--tinta-suave)]">
-              Agenda, clientes, estoque e financeiro conversando entre si — para você olhar o carro,
-              não a planilha.
+            <p className="mt-4 text-lg leading-relaxed opacity-70">
+              Agenda por profissional, estoque e financeiro conversando entre si, para você olhar o
+              carro e não a planilha.
             </p>
-            <dl className="mt-10 grid grid-cols-2 gap-6">
+            <ul className="mt-9 space-y-3 text-sm">
               {[
-                { rotulo: 'Fuso da operação', valor: 'America/São_Paulo' },
-                { rotulo: 'Preço na venda', valor: 'Congelado' },
-                { rotulo: 'Dados por empresa', valor: 'Isolados' },
-                { rotulo: 'Sessão', valor: 'Criptografada' },
+                'O preço do serviço fica congelado no atendimento',
+                'Cada empresa enxerga só os próprios dados',
+                'A baixa de estoque acontece ao concluir o serviço',
               ].map((item) => (
-                <div key={item.rotulo}>
-                  <dt className="rotulo-tecnico">{item.rotulo}</dt>
-                  <dd className="mt-1 text-sm font-medium text-[var(--tinta)]">{item.valor}</dd>
-                </div>
+                <li key={item} className="flex items-start gap-3">
+                  <span
+                    aria-hidden
+                    className="mt-1.5 h-0.5 w-5 shrink-0 rounded-full bg-[var(--acento)]"
+                  />
+                  <span className="opacity-85">{item}</span>
+                </li>
               ))}
-            </dl>
+            </ul>
           </div>
-          <p className="text-xs text-[var(--tinta-tenue)]">
-            EsteticaFlow · todos os direitos reservados
-          </p>
+          <p className="text-xs opacity-50">Brilhoflow · todos os direitos reservados</p>
         </div>
       </aside>
 

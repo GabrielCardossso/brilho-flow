@@ -185,7 +185,7 @@ export function CentralDeConfiguracoes() {
     },
     onSuccess: () => {
       invalidar();
-      toast.success('Solicitação enviada à EsteticaFlow.');
+      toast.success('Solicitação enviada ao Brilhoflow.');
       setEmpresaAberta(false);
     },
     onError: (erro) => toast.error(mensagemDeErro(erro)),
@@ -269,7 +269,7 @@ export function CentralDeConfiguracoes() {
         <Cartao destaque>
           <CartaoCabecalho
             titulo="Dados da empresa"
-            descricao="Alterações passam por conferência da EsteticaFlow"
+            descricao="Alterações passam por conferência do Brilhoflow"
             acao={
               ehAdministrador ? (
                 <Botao
@@ -310,13 +310,13 @@ export function CentralDeConfiguracoes() {
               <div>
                 <p className="rotulo-tecnico">Telefone</p>
                 <p className="numerico mt-0.5 text-[var(--tinta)]">
-                  {data.empresa.telefone === null ? '—' : formatarTelefone(data.empresa.telefone)}
+                  {data.empresa.telefone === null ? '-' : formatarTelefone(data.empresa.telefone)}
                 </p>
               </div>
             </div>
             <div>
               <p className="rotulo-tecnico">E-mail</p>
-              <p className="mt-0.5 break-all text-[var(--tinta)]">{data.empresa.email ?? '—'}</p>
+              <p className="mt-0.5 break-all text-[var(--tinta)]">{data.empresa.email ?? '-'}</p>
             </div>
           </CartaoCorpo>
         </Cartao>
@@ -358,7 +358,7 @@ export function CentralDeConfiguracoes() {
             </dl>
 
             <p className="text-xs text-[var(--tinta-tenue)]">
-              {plano.descricao} A troca de plano é feita pela EsteticaFlow e preserva todo o
+              {plano.descricao} A troca de plano é feita pelo Brilhoflow e preserva todo o
               histórico.
             </p>
           </CartaoCorpo>
@@ -504,7 +504,7 @@ export function CentralDeConfiguracoes() {
                   {data.acessos.slice(0, 5).map((acesso) => (
                     <li key={acesso.id} className="flex justify-between gap-3">
                       <span className="min-w-0 truncate text-[var(--tinta-suave)]">
-                        {acesso.usuarioNome} · {acesso.navegador ?? '—'}
+                        {acesso.usuarioNome} · {acesso.navegador ?? '-'}
                       </span>
                       <span className="numerico shrink-0 text-[var(--tinta-tenue)]">
                         {formatarDataHora(acesso.ocorridoEm)}
@@ -697,7 +697,7 @@ export function CentralDeConfiguracoes() {
         aberto={empresaAberta}
         aoMudar={setEmpresaAberta}
         titulo="Solicitar alteração cadastral"
-        descricao="Como são dados fiscais, a EsteticaFlow confere antes de aplicar."
+        descricao="Como são dados fiscais, o Brilhoflow confere antes de aplicar."
         rodape={
           <>
             <Botao variante="fantasma" onClick={() => setEmpresaAberta(false)}>

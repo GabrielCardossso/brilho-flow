@@ -2,6 +2,7 @@ import { and, between, count, eq, inArray, sql } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import { agendamento, agendamentoServico, cliente, servico } from '@/db/schema';
+import type { UnidadeBase } from '@/domain/estoque';
 import { ok, type Result } from '@/domain/result';
 import { variacaoPercentual } from '@/domain/relatorio';
 import { Dinheiro } from '@/domain/shared/decimal';
@@ -37,7 +38,7 @@ export interface PainelDados {
     nome: string;
     quantidadeAtual: string;
     quantidadeMinima: string;
-    unidadeMedida: string;
+    unidadeMedida: UnidadeBase;
     percentual: number;
   }>;
   agendaProxima: Array<{

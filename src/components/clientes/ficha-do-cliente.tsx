@@ -30,6 +30,7 @@ import { Vazio } from '@/components/ui/vazio';
 import { ROTULO_STATUS, type StatusAgendamento } from '@/domain/agendamento';
 import { CATALOGO_RELACIONAMENTO, type Relacionamento } from '@/domain/cliente';
 import { formatarCep, formatarCpfCnpj, formatarPlaca, formatarTelefone } from '@/domain/shared/documento';
+import { Placa } from '@/components/ui/placa';
 import { formatarData, formatarDataHora } from '@/domain/shared/tempo';
 import { formatarMoeda } from '@/domain/shared/texto';
 import { useAlternarVeiculo, useCliente } from '@/hooks/use-clientes';
@@ -168,7 +169,7 @@ export function FichaDoCliente({ id }: { id: number }) {
         <Indicador rotulo="Ticket médio" valor={formatarMoeda(data.ticketMedio)} />
         <Indicador
           rotulo="Último atendimento"
-          valor={data.ultimoAtendimento === null ? '—' : formatarData(data.ultimoAtendimento)}
+          valor={data.ultimoAtendimento === null ? '-' : formatarData(data.ultimoAtendimento)}
         />
       </section>
 
@@ -211,10 +212,13 @@ export function FichaDoCliente({ id }: { id: number }) {
                     <p className="truncate text-sm font-medium text-[var(--tinta)]">
                       {veiculo.marca} {veiculo.modelo}
                     </p>
-                    <p className="truncate text-xs text-[var(--tinta-tenue)]">
-                      <span className="numerico">{formatarPlaca(veiculo.placa)}</span>
-                      {veiculo.cor !== null ? ` · ${veiculo.cor}` : ''}
-                      {veiculo.ano !== null ? ` · ${veiculo.ano}` : ''}
+                    <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[var(--tinta-tenue)]">
+                      <Placa valor={formatarPlaca(veiculo.placa)} />
+                      <span>
+                        {veiculo.cor ?? ''}
+                        {veiculo.cor !== null && veiculo.ano !== null ? ' · ' : ''}
+                        {veiculo.ano ?? ''}
+                      </span>
                     </p>
                   </div>
                   {!veiculo.ativo ? <Etiqueta tom="neutro">Arquivado</Etiqueta> : null}
@@ -258,7 +262,7 @@ export function FichaDoCliente({ id }: { id: number }) {
             </div>
             <div>
               <p className="rotulo-tecnico">E-mail</p>
-              <p className="mt-0.5 break-all text-[var(--tinta)]">{cliente.email ?? '—'}</p>
+              <p className="mt-0.5 break-all text-[var(--tinta)]">{cliente.email ?? '-'}</p>
             </div>
             <div>
               <p className="rotulo-tecnico">Endereço</p>

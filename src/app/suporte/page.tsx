@@ -7,7 +7,7 @@ import { Cartao } from '@/components/ui/cartao';
 
 export const metadata: Metadata = {
   title: 'Suporte',
-  description: 'Canais de atendimento da EsteticaFlow.',
+  description: 'Canais de atendimento do Brilhoflow.',
 };
 
 const CANAIS = [
@@ -38,7 +38,7 @@ const DUVIDAS = [
   {
     pergunta: 'Esqueci minha senha. O que faço?',
     resposta:
-      'A redefinição é feita pelo administrador da sua empresa, em Configurações › Usuários. Se você é o administrador, fale com a EsteticaFlow por um dos canais acima.',
+      'A redefinição é feita pelo administrador da sua empresa, em Configurações › Usuários. Se você é o administrador, fale com o Brilhoflow por um dos canais acima.',
   },
   {
     pergunta: 'Minha empresa apareceu como bloqueada.',
@@ -48,7 +48,7 @@ const DUVIDAS = [
   {
     pergunta: 'Preciso de estoque e financeiro. Como habilito?',
     resposta:
-      'Esses módulos fazem parte do plano Pro. A troca de plano é feita pela EsteticaFlow e não faz você perder nenhum histórico.',
+      'Esses módulos fazem parte do plano Pro. A troca de plano é feita pelo Brilhoflow e não faz você perder nenhum histórico.',
   },
   {
     pergunta: 'Como altero os dados cadastrais da empresa?',

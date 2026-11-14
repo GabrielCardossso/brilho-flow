@@ -246,7 +246,7 @@ export async function criarProduto(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'PRODUTO_CRIADO',
-    detalhes: `Produto ${criado.id} — ${dados.nome}`,
+    detalhes: `Produto ${criado.id}: ${dados.nome}`,
   });
 
   return ok({ id: criado.id });
@@ -331,7 +331,7 @@ export async function atualizarProduto(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'PRODUTO_ATUALIZADO',
-    detalhes: `Produto ${produtoId} — ${dados.nome}`,
+    detalhes: `Produto ${produtoId}: ${dados.nome}`,
   });
 
   return ok({ id: produtoId });
@@ -440,7 +440,7 @@ export async function registrarEntrada(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'ESTOQUE_ENTRADA',
-    detalhes: `Produto ${produtoId} — ${dados.quantidade}`,
+    detalhes: `Produto ${produtoId}: ${dados.quantidade}`,
   });
 
   return ok({ saldo, valor: valor.value });
@@ -505,7 +505,7 @@ export async function registrarSaida(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'ESTOQUE_SAIDA',
-    detalhes: `Produto ${produtoId} — ${quantidade.value.quantidade} ${registro.unidadeMedida}`,
+    detalhes: `Produto ${produtoId}: ${quantidade.value.quantidade} ${registro.unidadeMedida}`,
   });
 
   return ok({ saldo: resultado.saldo });
@@ -541,7 +541,7 @@ export async function alterarMinimo(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'ESTOQUE_MINIMO_ALTERADO',
-    detalhes: `Produto ${produtoId} — mínimo ${quantidadeMinima}`,
+    detalhes: `Produto ${produtoId}: mínimo ${quantidadeMinima}`,
   });
 
   return ok(atualizado);

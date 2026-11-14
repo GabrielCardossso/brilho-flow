@@ -1,0 +1,191 @@
+/* Chão da oficina: um cartão por profissional, o carro que está com ele agora. */
+
+.chao-grade {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+}
+
+.chao-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 19rem;
+  padding: 1.1rem 1.2rem;
+  transition: transform var(--duracao-media) var(--ease-mecanico);
+}
+.chao-cartao > * {
+  position: relative;
+  z-index: 1;
+}
+@media (hover: hover) {
+  .chao-cartao:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.chao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.chao-topo > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tinta);
+}
+
+.chao-vivo {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--positivo);
+  animation: chao-pulsa 1.8s infinite;
+}
+/* Atrasado: o ponto pulsa em âmbar, igual ao anel. */
+.chao-vivo[data-atraso='true'] {
+  background: var(--atencao);
+  animation: none;
+}
+@keyframes chao-pulsa {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--positivo) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+
+.chao-anel {
+  position: relative;
+  width: 7.75rem;
+  height: 7.75rem;
+  margin: 0 auto;
+}
+.chao-anel > svg {
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+}
+.chao-anel circle {
+  fill: none;
+  stroke-width: 9;
+}
+.chao-anel .trilha {
+  stroke: var(--superficie-3);
+}
+.chao-anel .prog {
+  stroke: var(--acento-ativo);
+  transition: stroke-dashoffset 1.2s var(--ease-brilho);
+}
+.chao-anel[data-estourou='true'] .prog {
+  stroke: var(--atencao);
+}
+.chao-anel > div {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+.chao-anel b {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  white-space: nowrap;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.chao-anel small {
+  font-size: 0.7rem;
+  color: var(--tinta-tenue);
+}
+
+.chao-nome {
+  text-align: center;
+}
+.chao-nome b {
+  display: block;
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chao-nome small {
+  display: block;
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chao-depois {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--borda);
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+}
+.chao-depois span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chao-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  font-size: 0.82rem;
+  color: var(--tinta-suave);
+}
+.chao-resumo b {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chao-vivo {
+    animation: none;
+  }
+  .chao-anel .prog,
+  .chao-cartao {
+    transition: none;
+  }
+}
+
+/* Celular: um cartão por vez, deslizando de lado, em vez de uma pilha de cartões altos. */
+@media (max-width: 639px) {
+  .chao-grade {
+    display: flex;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+    scroll-padding-inline: 1rem;
+    scroll-snap-type: x mandatory;
+  }
+  .chao-grade > li {
+    flex: 0 0 82%;
+    min-height: 17rem;
+    scroll-snap-align: start;
+  }
+}

@@ -12,42 +12,25 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import { CabecalhoDePagina } from '@/components/painel/cabecalho-de-pagina';
+import { ChaoDaOficina } from '@/components/painel/chao-da-oficina';
+import { GraficoFaturamento } from '@/components/painel/grafico-faturamento';
 import { Botao } from '@/components/ui/botao';
 import { Cartao, CartaoCabecalho, CartaoCorpo } from '@/components/ui/cartao';
 import { Esqueleto } from '@/components/ui/esqueleto';
 import { Etiqueta } from '@/components/ui/etiqueta';
 import { Indicador, Medidor } from '@/components/ui/indicador';
+import { Placa } from '@/components/ui/placa';
 import { Vazio } from '@/components/ui/vazio';
 import { CATALOGO_RELACIONAMENTO, type Relacionamento } from '@/domain/cliente';
 import { ROTULO_STATUS, type StatusAgendamento } from '@/domain/agendamento';
 import { formatarHora, formatarRelativo, m } from '@/domain/shared/tempo';
-import { formatarMoeda, formatarQuantidade } from '@/domain/shared/texto';
+import { descreverSaldo } from '@/domain/estoque';
+import { formatarMoeda } from '@/domain/shared/texto';
 import { useSessao } from '@/hooks/use-sessao';
 import { api, mensagemDeErro } from '@/lib/api';
 import { chaves } from '@/lib/chaves';
 import type { PainelDados } from '@/server/painel';
-
-const CORES_GRAFICO = [
-  'var(--acento-ativo)',
-  'var(--informativo)',
-  'var(--positivo)',
-  'var(--atencao)',
-  'var(--critico)',
-] as const;
 
 const TOM_STATUS: Record<StatusAgendamento, 'acento' | 'informativo' | 'positivo' | 'neutro'> = {
   AGENDADO: 'informativo',
@@ -112,8 +95,8 @@ export function VisaoDoPainel() {
 
   const serieGrafico = data.serie.map((item) => ({
     mes: item.mes,
-    Receita: Number(item.receita),
-    Despesa: Number(item.despesa),
+    receita: Number(item.receita),
+    despesa: Number(item.despesa),
   }));
 
   const relacionamentos = Object.entries(data.relacionamento) as Array<[Relacionamento, number]>;
@@ -133,11 +116,14 @@ export function VisaoDoPainel() {
         }
       />
 
+      {/* ------------------------------- Chão da oficina ----------------- */}
+      <ChaoDaOficina />
+
       {/* ------------------------------- Indicadores --------------------- */}
       <section aria-label="Indicadores do mês" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Indicador
           rotulo="Faturamento do mês"
-          valor={podeFinanceiro ? formatarMoeda(data.receitaMes) : '—'}
+          valor={podeFinanceiro ? formatarMoeda(data.receitaMes) : 'Indisponível'}
           variacao={data.variacaoReceita}
           detalhe={podeFinanceiro ? undefined : 'Disponível no plano Pro'}
           icone={CircleDollarSign}
@@ -145,11 +131,11 @@ export function VisaoDoPainel() {
         />
         <Indicador
           rotulo="Resultado do mês"
-          valor={podeFinanceiro ? formatarMoeda(data.lucroMes) : '—'}
+          valor={podeFinanceiro ? formatarMoeda(data.lucroMes) : 'Indisponível'}
           detalhe={
             podeFinanceiro
               ? data.margem === null
-                ? 'Margem —'
+                ? 'Sem margem'
                 : `Margem de ${data.margem}%`
               : undefined
           }
@@ -173,7 +159,7 @@ export function VisaoDoPainel() {
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         {/* ----------------------------- Faturamento ---------------------- */}
         <Cartao className="painel-cartao lg:col-span-2" destaque>
-          <CartaoCabecalho titulo="Faturamento e despesa" descricao="Últimos seis meses fechados" />
+          <CartaoCabecalho titulo="Faturamento e despesa" descricao="Últimos seis meses" />
           <CartaoCorpo>
             {!podeFinanceiro ? (
               <Vazio
@@ -181,47 +167,8 @@ export function VisaoDoPainel() {
                 titulo="Módulo financeiro no plano Pro"
                 descricao="Assine o plano Pro para acompanhar receita, despesa e margem."
               />
-            ) : serieGrafico.length === 0 ? (
-              <Vazio icone={TrendingUp} titulo="Ainda sem histórico" />
             ) : (
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={serieGrafico} margin={{ top: 4, right: 4, bottom: 0, left: -12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--borda)" vertical={false} />
-                    <XAxis
-                      dataKey="mes"
-                      tick={{ fill: 'var(--tinta-tenue)', fontSize: 11 }}
-                      axisLine={{ stroke: 'var(--borda)' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: 'var(--tinta-tenue)', fontSize: 11 }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(valor: number) =>
-                        valor >= 1000 ? `${Math.round(valor / 1000)}k` : String(valor)
-                      }
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'var(--acento-fraco)' }}
-                      contentStyle={{
-                        background: 'var(--superficie-2)',
-                        border: '1px solid var(--borda)',
-                        borderRadius: 10,
-                        color: 'var(--tinta)',
-                        fontSize: 12,
-                      }}
-                      formatter={(valor: number | string) => formatarMoeda(Number(valor))}
-                    />
-                    <Legend
-                      wrapperStyle={{ fontSize: 12, color: 'var(--tinta-suave)' }}
-                      iconType="circle"
-                    />
-                    <Bar dataKey="Receita" fill="var(--acento-ativo)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Despesa" fill="var(--borda-forte)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <GraficoFaturamento serie={serieGrafico} />
             )}
           </CartaoCorpo>
         </Cartao>
@@ -265,8 +212,9 @@ export function VisaoDoPainel() {
                       <p className="truncate text-sm font-medium text-[var(--tinta)]">
                         {item.clienteNome}
                       </p>
-                      <p className="truncate text-xs text-[var(--tinta-tenue)]">
-                        {item.veiculoModelo} · {item.veiculoPlaca}
+                      <p className="mt-1 flex items-center gap-2 truncate text-xs text-[var(--tinta-tenue)]">
+                        <Placa valor={item.veiculoPlaca} />
+                        <span className="truncate">{item.veiculoModelo}</span>
                       </p>
                     </div>
                     <Etiqueta tom={TOM_STATUS[item.status as StatusAgendamento]}>
@@ -321,44 +269,32 @@ export function VisaoDoPainel() {
           />
           <CartaoCorpo>
             {data.despesasCategoria.length > 0 && podeFinanceiro ? (
-              <div className="mb-5 h-40">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data.despesasCategoria.map((item) => ({
-                        name: item.categoria,
-                        value: Number(item.valor),
-                      }))}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={38}
-                      outerRadius={62}
-                      paddingAngle={2}
-                      stroke="var(--superficie-1)"
-                    >
-                      {data.despesasCategoria.map((_, indice) => (
-                        <Cell
-                          key={indice}
-                          fill={
-                            CORES_GRAFICO[indice % CORES_GRAFICO.length] ?? 'var(--borda-forte)'
-                          }
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: 'var(--superficie-2)',
-                        border: '1px solid var(--borda)',
-                        borderRadius: 10,
-                        fontSize: 12,
-                      }}
-                      formatter={(valor: number | string) => formatarMoeda(Number(valor))}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <p className="text-center text-xs text-[var(--tinta-tenue)]">
-                  Despesas por categoria
-                </p>
+              <div className="mb-5 border-b border-[var(--borda)] pb-5">
+                <p className="rotulo-tecnico mb-3">Despesas por categoria</p>
+                <ul className="space-y-3">
+                  {(() => {
+                    const itens = data.despesasCategoria
+                      .map((item) => ({ nome: item.categoria, valor: Number(item.valor) }))
+                      .sort((a, b) => b.valor - a.valor);
+                    const total = itens.reduce((soma, item) => soma + item.valor, 0);
+                    return itens.map((item) => {
+                      const parte = total === 0 ? 0 : Math.round((item.valor / total) * 100);
+                      return (
+                        <li key={item.nome}>
+                          <div className="flex items-baseline justify-between gap-3 text-sm">
+                            <span className="truncate text-[var(--tinta)]">{item.nome}</span>
+                            <span className="numerico shrink-0 text-[var(--tinta-suave)]">
+                              {formatarMoeda(item.valor)} · {parte}%
+                            </span>
+                          </div>
+                          <div className="mt-1.5">
+                            <Medidor percentual={parte} tom="acento" rotulo={item.nome} />
+                          </div>
+                        </li>
+                      );
+                    });
+                  })()}
+                </ul>
               </div>
             ) : null}
 
@@ -416,11 +352,10 @@ export function VisaoDoPainel() {
                   <Package className="size-4 shrink-0 text-[var(--tinta-tenue)]" aria-hidden />
                 </div>
                 <p className="numerico mt-2 text-lg text-[var(--critico)]">
-                  {formatarQuantidade(alerta.quantidadeAtual)}{' '}
-                  <span className="text-xs text-[var(--tinta-tenue)]">{alerta.unidadeMedida}</span>
+                  {descreverSaldo(alerta.quantidadeAtual, alerta.unidadeMedida)}
                 </p>
                 <p className="mb-2 text-xs text-[var(--tinta-tenue)]">
-                  Mínimo: {formatarQuantidade(alerta.quantidadeMinima)} {alerta.unidadeMedida}
+                  Mínimo: {descreverSaldo(alerta.quantidadeMinima, alerta.unidadeMedida)}
                 </p>
                 <Medidor percentual={alerta.percentual} tom="critico" rotulo={alerta.nome} />
               </div>

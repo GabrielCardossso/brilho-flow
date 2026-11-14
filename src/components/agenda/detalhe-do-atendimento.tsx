@@ -26,6 +26,7 @@ import {
   type StatusAgendamento,
 } from '@/domain/agendamento';
 import { formatarPlaca, formatarTelefone } from '@/domain/shared/documento';
+import { Placa } from '@/components/ui/placa';
 import { formatarData, formatarDataHora, formatarDuracao } from '@/domain/shared/tempo';
 import { formatarMoeda } from '@/domain/shared/texto';
 import { useAcaoDeAgendamento, useAgendamento } from '@/hooks/use-agenda';
@@ -236,9 +237,9 @@ export function DetalheDoAtendimento({ id }: { id: number }) {
               <div>
                 <p className="rotulo-tecnico">Veículo</p>
                 <p className="mt-0.5 text-[var(--tinta)]">{data.veiculoModelo}</p>
-                <p className="numerico text-xs text-[var(--tinta-tenue)]">
-                  {formatarPlaca(data.veiculoPlaca)}
-                </p>
+                <div className="mt-2">
+                  <Placa valor={formatarPlaca(data.veiculoPlaca)} grande />
+                </div>
               </div>
               <div>
                 <p className="rotulo-tecnico">Responsável</p>

@@ -528,7 +528,7 @@ export function ConsoleDaPlataforma() {
                   <Linha key={registro.id}>
                     <Celula>{formatarDataHora(registro.ocorridoEm)}</Celula>
                     <Celula>{registro.empresaNome}</Celula>
-                    <Celula>{registro.usuarioNome ?? '—'}</Celula>
+                    <Celula>{registro.usuarioNome ?? '-'}</Celula>
                     <Celula>
                       <Etiqueta tom="neutro">
                         {ROTULO_ACAO_LOG[registro.acao] ?? registro.acao}
@@ -536,7 +536,7 @@ export function ConsoleDaPlataforma() {
                     </Celula>
                     <Celula>
                       <span className="line-clamp-1 text-xs text-[var(--tinta-suave)]">
-                        {registro.detalhes ?? '—'}
+                        {registro.detalhes ?? '-'}
                       </span>
                     </Celula>
                   </Linha>
@@ -740,7 +740,7 @@ export function ConsoleDaPlataforma() {
             ? undefined
             : bloqueioDe.elegivelBloqueio
               ? `${bloqueioDe.nomeFantasia} está com ${bloqueioDe.diasEmAtraso} dias de atraso.`
-              : `${bloqueioDe.nomeFantasia} ainda está na tolerância de 7 dias — exige bloqueio manual.`
+              : `${bloqueioDe.nomeFantasia} ainda está na tolerância de 7 dias, exige bloqueio manual.`
         }
         rodape={
           <>
