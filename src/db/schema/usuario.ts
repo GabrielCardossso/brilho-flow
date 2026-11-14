@@ -75,6 +75,23 @@ export const log = pgTable(
   (t) => [index('ix_log_empresa_data').on(t.empresaId, t.ocorridoEm)],
 );
 
+/**
+ * Sessoes encerradas por logout. O token e sem estado, entao a revogacao e
+ * uma lista de identificadores (jti) que so precisa guardar ate o token expirar.
+ */
+export const sessaoRevogada = pgTable(
+  'sessao_revogada',
+  {
+    jti: varchar('jti', { length: 64 }).primaryKey(),
+    usuarioId: bigint('usuario_id', { mode: 'number' })
+      .notNull()
+      .references(() => usuario.id, { onDelete: 'cascade' }),
+    expiraEm: timestamp('expira_em', { withTimezone: true }).notNull(),
+    revogadaEm: timestamp('revogada_em', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('ix_sessao_revogada_expira').on(t.expiraEm)],
+);
+
 export const usuarioRelations = relations(usuario, ({ one }) => ({
   empresa: one(empresa, { fields: [usuario.empresaId], references: [empresa.id] }),
 }));

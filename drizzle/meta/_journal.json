@@ -36,6 +36,13 @@
       "when": 1786163305091,
       "tag": "0004_complex_colleen_wing",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794626193366,
+      "tag": "0005_sessao_revogada",
+      "breakpoints": true
     }
   ]
 }

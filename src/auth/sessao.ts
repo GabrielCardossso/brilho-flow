@@ -34,6 +34,7 @@ export async function assinarSessao(
   const maxAge = lembrar ? DURACAO_LEMBRAR_SEGUNDOS : DURACAO_PADRAO_SEGUNDOS;
   const token = await new SignJWT({ ...conteudo })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setJti(crypto.randomUUID())
     .setIssuedAt()
     .setIssuer('esteticaflow')
     .setAudience('esteticaflow-app')
@@ -42,7 +43,14 @@ export async function assinarSessao(
   return { token, maxAge };
 }
 
-export async function lerSessao(token: string | undefined): Promise<ConteudoSessao | null> {
+/** Conteudo do cookie mais os campos de controle do token (identificador e expiracao). */
+export interface SessaoLida extends ConteudoSessao {
+  readonly jti: string | null;
+  /** Instante de expiracao do token, em segundos desde a epoca. */
+  readonly exp: number | null;
+}
+
+export async function lerSessao(token: string | undefined): Promise<SessaoLida | null> {
   if (typeof token !== 'string' || token === '') return null;
   try {
     const { payload } = await jwtVerify(token, segredo(), {
@@ -50,7 +58,12 @@ export async function lerSessao(token: string | undefined): Promise<ConteudoSess
       audience: 'esteticaflow-app',
     });
     const analisado = conteudoSessaoSchema.safeParse(payload);
-    return analisado.success ? analisado.data : null;
+    if (!analisado.success) return null;
+    return {
+      ...analisado.data,
+      jti: typeof payload.jti === 'string' ? payload.jti : null,
+      exp: typeof payload.exp === 'number' ? payload.exp : null,
+    };
   } catch {
     return null;
   }

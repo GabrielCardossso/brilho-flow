@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { db } from '@/db/client';
-import { empresa as tabelaEmpresa, usuario as tabelaUsuario } from '@/db/schema';
+import { empresa as tabelaEmpresa, sessaoRevogada, usuario as tabelaUsuario } from '@/db/schema';
 import {
   motivoDoBloqueio,
   permiteRecurso,
@@ -55,7 +55,7 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
     return falha(erro('NAO_AUTENTICADO', 'Sessão expirada. Entre novamente.'));
   }
 
-  const [[registro], [conta]] = await Promise.all([
+  const [[registro], [conta], [revogada]] = await Promise.all([
     db.select().from(tabelaEmpresa).where(eq(tabelaEmpresa.id, conteudo.empresaId)).limit(1),
     db
       .select({
@@ -69,6 +69,13 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
       .from(tabelaUsuario)
       .where(eq(tabelaUsuario.id, conteudo.usuarioId))
       .limit(1),
+    conteudo.jti === null
+      ? Promise.resolve([] as Array<{ jti: string }>)
+      : db
+          .select({ jti: sessaoRevogada.jti })
+          .from(sessaoRevogada)
+          .where(eq(sessaoRevogada.jti, conteudo.jti))
+          .limit(1),
   ]);
 
   if (registro === undefined) {
@@ -79,6 +86,7 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
   // arquivado, movido de empresa ou com a senha trocada perde a sessao agora,
   // e o papel vigente (promocao ou rebaixamento) vale na proxima requisicao.
   if (
+    revogada !== undefined ||
     conta === undefined ||
     !conta.ativo ||
     conta.empresaId !== conteudo.empresaId ||
