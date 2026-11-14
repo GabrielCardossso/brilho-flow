@@ -1,0 +1,6 @@
+# Cópia para .dev.vars quando for testar o Worker localmente (npx wrangler dev / yarn cf:preview).
+# NUNCA versione o .dev.vars real.
+SESSION_SECRET=troque-este-valor-por-uma-string-aleatoria-de-no-minimo-32-caracteres
+NEXT_PUBLIC_APP_URL=http://localhost:8787
+# Conexão usada quando não houver binding do Hyperdrive.
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/esteticaflow

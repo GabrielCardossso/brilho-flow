@@ -1,4 +1,4 @@
-import ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs/dist/exceljs.min.js';
 import type { Relatorio } from '@/server/relatorios';
 import { CATALOGO_PLANOS } from '@/domain/plano';
 import { formatarData } from '@/domain/shared/tempo';

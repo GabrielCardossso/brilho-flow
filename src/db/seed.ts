@@ -32,8 +32,60 @@ import {
 
 const ACENTO_PADRAO = 'tacometro';
 const HEX_PADRAO = '#f59e0b';
-const CNPJ_DEMO = '45598776000156';
-const EMAIL_DEMO = 'demo@lumenauto.com.br';
+
+/** Uma empresa de demonstração: identidade, plano e equipe. Os dados de operação são os mesmos. */
+interface ConfigDemo {
+  cnpj: string;
+  razaoSocial: string;
+  nomeFantasia: string;
+  telefone: string;
+  emailContato: string;
+  plano: 'BASICO' | 'COMPLETO';
+  mensalidade: string;
+  /** Variável de ambiente com a senha dos usuários desta demo. */
+  variavelDaSenha: string;
+  /** Primeiro da lista é o administrador da empresa. */
+  equipe: Array<{ nome: string; email: string; papel: 'ADMINISTRADOR' | 'FUNCIONARIO' }>;
+}
+
+/** Plano Pro (Completo): mostra o produto inteiro, com 5 usuários. */
+const DEMO_PRO: ConfigDemo = {
+  cnpj: '45598776000156',
+  razaoSocial: 'Lumen Auto Studio Ltda',
+  nomeFantasia: 'Lumen Auto Studio',
+  telefone: '48991628470',
+  emailContato: 'contato@lumenauto.com.br',
+  plano: 'COMPLETO',
+  mensalidade: '119.90',
+  variavelDaSenha: 'SEED_DEMO_SENHA',
+  equipe: [
+    { nome: 'Isabela Moura', email: 'demo@lumenauto.com.br', papel: 'ADMINISTRADOR' },
+    { nome: 'Rafael Nunes', email: 'rafael@lumenauto.com.br', papel: 'FUNCIONARIO' },
+    { nome: 'Camila Prado', email: 'camila@lumenauto.com.br', papel: 'FUNCIONARIO' },
+    { nome: 'Diego Azevedo', email: 'diego@lumenauto.com.br', papel: 'FUNCIONARIO' },
+    { nome: 'Bianca Freitas', email: 'bianca@lumenauto.com.br', papel: 'FUNCIONARIO' },
+  ],
+};
+
+/**
+ * Plano Básico: 2 usuários e só os módulos do plano. Os dados de estoque e
+ * financeiro existem no banco, mas ficam escondidos pelo plano. Ao trocar o
+ * plano para Pro na aba Plataforma, eles aparecem: é o momento "upgrade" da demo.
+ */
+const DEMO_BASICO: ConfigDemo = {
+  cnpj: '11222333000181',
+  razaoSocial: 'Brilho Express Estética Automotiva Ltda',
+  nomeFantasia: 'Brilho Express Estética',
+  telefone: '48991746960',
+  emailContato: 'contato@brilhoexpress.com.br',
+  plano: 'BASICO',
+  mensalidade: '59.90',
+  variavelDaSenha: 'SEED_DEMO_BASICO_SENHA',
+  equipe: [
+    { nome: 'Marcos Albuquerque', email: 'demo.basico@brilhoexpress.com.br', papel: 'ADMINISTRADOR' },
+    { nome: 'Letícia Gomes', email: 'leticia@brilhoexpress.com.br', papel: 'FUNCIONARIO' },
+  ],
+};
 
 function exigir(nome: string, padrao?: string): string {
   const valor = process.env[nome] ?? padrao;
@@ -121,11 +173,12 @@ async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>)
 /** Devolve a senha do usuario demo quando a empresa foi criada; `null` se nada foi feito. */
 async function criarDemonstracao(
   db: ReturnType<typeof drizzle<typeof schema>>,
+  config: ConfigDemo,
 ): Promise<string | null> {
   const [existente] = await db
     .select({ id: empresa.id })
     .from(empresa)
-    .where(eq(empresa.cnpj, CNPJ_DEMO))
+    .where(eq(empresa.cnpj, config.cnpj))
     .limit(1);
 
   if (existente !== undefined) {
@@ -136,20 +189,20 @@ async function criarDemonstracao(
   }
 
   // Nenhuma senha fixa no repositorio: vem do ambiente ou e gerada na hora.
-  const senhaDemo = process.env.SEED_DEMO_SENHA ?? randomBytes(12).toString('base64url');
+  const senhaDemo = process.env[config.variavelDaSenha] ?? randomBytes(12).toString('base64url');
   const senhaHash = await bcrypt.hash(senhaDemo, 10);
 
   await db.transaction(async (tx) => {
     const [demo] = await tx
       .insert(empresa)
       .values({
-        razaoSocial: 'Lumen Auto Studio Ltda',
-        nomeFantasia: 'Lumen Auto Studio',
-        cnpj: CNPJ_DEMO,
-        telefone: '48991628470',
-        email: 'contato@lumenauto.com.br',
-        plano: 'COMPLETO',
-        valorMensalidade: '119.90',
+        razaoSocial: config.razaoSocial,
+        nomeFantasia: config.nomeFantasia,
+        cnpj: config.cnpj,
+        telefone: config.telefone,
+        email: config.emailContato,
+        plano: config.plano,
+        valorMensalidade: config.mensalidade,
         proximoVencimento: daquiAMeses(1),
       })
       .returning({ id: empresa.id });
@@ -158,43 +211,15 @@ async function criarDemonstracao(
 
     const equipe = await tx
       .insert(usuario)
-      .values([
-        {
+      .values(
+        config.equipe.map((pessoa) => ({
           empresaId: demo.id,
-          nome: 'Isabela Moura',
-          email: EMAIL_DEMO,
+          nome: pessoa.nome,
+          email: pessoa.email,
           senhaHash,
-          papel: 'ADMINISTRADOR',
-        },
-        {
-          empresaId: demo.id,
-          nome: 'Rafael Nunes',
-          email: 'rafael@lumenauto.com.br',
-          senhaHash,
-          papel: 'FUNCIONARIO',
-        },
-        {
-          empresaId: demo.id,
-          nome: 'Camila Prado',
-          email: 'camila@lumenauto.com.br',
-          senhaHash,
-          papel: 'FUNCIONARIO',
-        },
-        {
-          empresaId: demo.id,
-          nome: 'Diego Azevedo',
-          email: 'diego@lumenauto.com.br',
-          senhaHash,
-          papel: 'FUNCIONARIO',
-        },
-        {
-          empresaId: demo.id,
-          nome: 'Bianca Freitas',
-          email: 'bianca@lumenauto.com.br',
-          senhaHash,
-          papel: 'FUNCIONARIO',
-        },
-      ])
+          papel: pessoa.papel,
+        })),
+      )
       .returning({ id: usuario.id, nome: usuario.nome });
 
     await tx.insert(configuracao).values([
@@ -775,13 +800,14 @@ async function principal(): Promise<void> {
       return;
     }
 
-    const senhaDemo = await criarDemonstracao(db);
-
-    if (senhaDemo !== null) {
-      console.warn('Empresa de demonstração criada: Lumen Auto Studio.');
-      console.warn(`  Acesso: ${EMAIL_DEMO} · senha ${senhaDemo}`);
-    } else {
-      console.warn('› A empresa de demonstração já existe. Nenhum dado foi duplicado.');
+    for (const config of [DEMO_PRO, DEMO_BASICO]) {
+      const senhaDemo = await criarDemonstracao(db, config);
+      if (senhaDemo !== null) {
+        console.warn(`Empresa de demonstração criada: ${config.nomeFantasia} (plano ${config.plano === 'COMPLETO' ? 'Pro' : 'Básico'}).`);
+        console.warn(`  Acesso: ${config.equipe[0]?.email ?? ''} · senha ${senhaDemo}`);
+      } else {
+        console.warn(`› ${config.nomeFantasia} já existe. Nenhum dado foi duplicado.`);
+      }
     }
   } finally {
     await conexao.end();

@@ -21,3 +21,8 @@ yarn-error.log*
 .vercel
 .idea/
 .vscode/
+
+# Cloudflare (OpenNext / Wrangler)
+.open-next/
+.wrangler/
+.dev.vars

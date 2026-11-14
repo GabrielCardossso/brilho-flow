@@ -208,12 +208,12 @@ export async function listarAgenda(
   );
 
   const itens = registros
-    .map((registro) => ({
+    .map(({ etapaGravada, ...registro }) => ({
       ...registro,
       dataHora: new Date(registro.dataHora).toISOString(),
       duracaoMinutos: Number(registro.duracaoMinutos),
       statusRotulo: ROTULO_STATUS[registro.status],
-      etapa: etapaEfetiva(registro.status, registro.etapaGravada),
+      etapa: etapaEfetiva(registro.status, etapaGravada),
       servicos: servicosPorAgendamento.get(registro.id) ?? [],
     }))
     .filter((item) => {
@@ -288,12 +288,13 @@ export async function obterAgendamento(
     .where(and(eq(receita.agendamentoId, id), eq(receita.empresaId, contexto.empresaId)))
     .limit(1);
 
+  const { etapaGravada, ...dados } = registro;
   return ok({
-    ...registro,
+    ...dados,
     dataHora: new Date(registro.dataHora).toISOString(),
     duracaoMinutos: Number(registro.duracaoMinutos),
     statusRotulo: ROTULO_STATUS[registro.status],
-    etapa: etapaEfetiva(registro.status, registro.etapaGravada),
+    etapa: etapaEfetiva(registro.status, etapaGravada),
     servicos: servicos.get(id) ?? [],
     receita: pagamento ?? null,
   });
