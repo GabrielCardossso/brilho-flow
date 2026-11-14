@@ -22,6 +22,13 @@ export function unidadeBaseDa(unidade: UnidadeMedida): UnidadeBase {
   return 'UN';
 }
 
+/** Maior quantidade que cabe em numeric(12,3), na unidade base. */
+export const LIMITE_QUANTIDADE = '999999999.999';
+
+export function excedeLimiteDeQuantidade(quantidade: string): boolean {
+  return Quantidade.comparar(quantidade, LIMITE_QUANTIDADE) > 0;
+}
+
 /**
  * Converte uma quantidade informada para a unidade base da sua dimensao.
  * O banco nunca armazena litros ou quilogramas: somente mL, g ou un.
@@ -33,10 +40,11 @@ export function normalizarQuantidade(
   const validada = validarQuantidadePositiva(quantidade);
   if (!validada.ok) return validada;
   const fator = unidade === 'L' || unidade === 'KG' ? '1000' : '1';
-  return ok({
-    quantidade: Quantidade.multiplicar(validada.value, fator),
-    unidadeBase: unidadeBaseDa(unidade),
-  });
+  const normalizada = Quantidade.multiplicar(validada.value, fator);
+  if (excedeLimiteDeQuantidade(normalizada)) {
+    return falha(validacao('A quantidade excede o limite permitido.', 'quantidade'));
+  }
+  return ok({ quantidade: normalizada, unidadeBase: unidadeBaseDa(unidade) });
 }
 
 export function normalizarQuantidadeNaoNegativa(
@@ -48,7 +56,11 @@ export function normalizarQuantidadeNaoNegativa(
     return falha(validacao('A quantidade não pode ser negativa.', campo));
   }
   const fator = unidade === 'L' || unidade === 'KG' ? '1000' : '1';
-  return ok({ quantidade: Quantidade.multiplicar(Quantidade.de(quantidade), fator), unidadeBase: unidadeBaseDa(unidade) });
+  const normalizada = Quantidade.multiplicar(Quantidade.de(quantidade), fator);
+  if (excedeLimiteDeQuantidade(normalizada)) {
+    return falha(validacao('A quantidade excede o limite permitido.', campo));
+  }
+  return ok({ quantidade: normalizada, unidadeBase: unidadeBaseDa(unidade) });
 }
 
 export function unidadesCompativeis(a: UnidadeMedida, b: UnidadeMedida): boolean {

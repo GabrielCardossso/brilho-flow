@@ -13,6 +13,7 @@ import {
   calcularCustoUnitario,
   calcularValorDaCompra,
   descricaoDaCompra,
+  excedeLimiteDeQuantidade,
   nivelDoEstoque,
   normalizarQuantidade,
   normalizarQuantidadeNaoNegativa,
@@ -23,7 +24,7 @@ import {
   type UnidadeBase,
   type UnidadeMedida,
 } from '@/domain/estoque';
-import { conflito, falha, naoEncontrado, ok, type Result } from '@/domain/result';
+import { conflito, falha, naoEncontrado, ok, validacao, type Result } from '@/domain/result';
 import { Dinheiro, Quantidade } from '@/domain/shared/decimal';
 import { hojeISO } from '@/domain/shared/tempo';
 import { contemTermo } from '@/domain/shared/texto';
@@ -403,6 +404,9 @@ export async function registrarEntrada(
     if (linha === undefined) throw new Error('Produto sem registro de estoque.');
 
     const novoSaldo = Quantidade.somar(linha.quantidadeAtual, quantidade.value.quantidade);
+    if (excedeLimiteDeQuantidade(novoSaldo)) {
+      return { erro: validacao('O saldo resultante excede o limite permitido.', 'quantidade') } as const;
+    }
     await tx.update(estoque).set({ quantidadeAtual: novoSaldo }).where(eq(estoque.id, linha.id));
 
     await tx.insert(movimentacaoEstoque).values({
@@ -429,6 +433,8 @@ export async function registrarEntrada(
 
     return novoSaldo;
   });
+
+  if (typeof saldo !== 'string') return falha(saldo.erro);
 
   await registrar({
     empresaId: contexto.empresaId,
@@ -499,7 +505,7 @@ export async function registrarSaida(
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: 'ESTOQUE_SAIDA',
-    detalhes: `Produto ${produtoId} — ${quantidade}`,
+    detalhes: `Produto ${produtoId} — ${quantidade.value.quantidade} ${registro.unidadeMedida}`,
   });
 
   return ok({ saldo: resultado.saldo });

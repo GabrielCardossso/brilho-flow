@@ -100,6 +100,9 @@ export const placaObrigatoria = z
   .transform(normalizarPlaca)
   .refine(placaValida, 'Placa inválida. Use ABC1234 ou ABC1D23.');
 
+/** Maior valor que cabe em numeric(10,2); acima disso o banco recusa com erro 500. */
+export const LIMITE_VALOR = 99_999_999.99;
+
 /** Valor monetario vindo de formulario: aceita "1.234,56" ou "1234.56". */
 export const dinheiro = (campo: string) =>
   z
@@ -113,7 +116,8 @@ export const dinheiro = (campo: string) =>
         : limpo;
       return normalizado;
     })
-    .refine((valor) => valor !== '' && /^-?\d+(\.\d+)?$/.test(valor), `${campo} inválido.`);
+    .refine((valor) => valor !== '' && /^-?\d+(\.\d+)?$/.test(valor), `${campo} inválido.`)
+    .refine((valor) => !(Math.abs(Number(valor)) > LIMITE_VALOR), `${campo} excede o limite permitido.`);
 
 export const dinheiroPositivo = (campo: string) =>
   dinheiro(campo).refine((valor) => Number(valor) > 0, `${campo} deve ser maior que zero.`);
@@ -132,8 +136,10 @@ export const dinheiroOpcional = (campo: string) =>
       return limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
     })
     .refine(
-      (valor) => valor === null || (/^\d+(\.\d+)?$/.test(valor) && Number(valor) >= 0),
-      `${campo} inválido.`,
+      (valor) =>
+        valor === null ||
+        (/^\d+(\.\d+)?$/.test(valor) && Number(valor) >= 0 && Number(valor) <= LIMITE_VALOR),
+      `${campo} inválido ou acima do limite permitido.`,
     );
 
 export const idNumerico = z.coerce
