@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Símbolo do Brilhoflow: um B no estilo do "G cortado" da Getel. Peças de anel
- * com cortes retos e espessura única, separadas por frestas: a haste e dois
- * "D" (o de baixo um pouco maior, como num B de verdade). Usa o acento da
- * empresa e funciona em qualquer fundo.
+ * Símbolo do Brilhoflow: um B geométrico, construído como o G da Getel, com
+ * espessura de traço única e barrigas que são anéis de círculo (a de baixo um
+ * pouco maior, como num B de verdade). Usa o acento da empresa e funciona em
+ * qualquer fundo.
  */
 export function Simbolo({ className }: { className?: string | undefined }) {
   return (
@@ -15,10 +15,10 @@ export function Simbolo({ className }: { className?: string | undefined }) {
       className={cn('size-8', className)}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g fill="var(--acento)" transform="translate(8.5 0) scale(.1)">
-        <path d="M0 0H56V440H0Z" />
-        <path d="M72 0H142A98 98 0 0 1 142 196H72V140H142A42 42 0 0 0 142 56H72Z" />
-        <path d="M72 212H156A114 114 0 0 1 156 440H72V384H156A58 58 0 0 0 156 268H72Z" />
+      <g fill="var(--acento)" transform="translate(8.95 2) scale(.078125)">
+        <path d="M0 0H56V512H0Z" />
+        <path d="M56 0H190A140 140 0 0 1 190 280H56V224H190A84 84 0 0 0 190 56H56Z" />
+        <path d="M56 224H190A144 144 0 0 1 190 512H56V456H190A88 88 0 0 0 190 280H56Z" />
       </g>
     </svg>
   );
