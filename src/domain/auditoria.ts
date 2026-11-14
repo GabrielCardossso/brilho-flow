@@ -20,6 +20,7 @@ export type AcaoRegistrada =
   | 'SERVICO_REATIVADO'
   | 'AGENDAMENTO_CRIADO'
   | 'AGENDAMENTO_INICIADO'
+  | 'AGENDAMENTO_ETAPA'
   | 'AGENDAMENTO_CONCLUIDO'
   | 'AGENDAMENTO_CANCELADO'
   | 'PAGAMENTO_REGISTRADO'
@@ -68,6 +69,7 @@ export const ROTULO_ACAO_LOG: Readonly<Record<string, string>> = {
   SERVICO_REATIVADO: 'Reativou serviço',
   AGENDAMENTO_CRIADO: 'Criou agendamento',
   AGENDAMENTO_INICIADO: 'Iniciou atendimento',
+  AGENDAMENTO_ETAPA: 'Moveu atendimento no quadro',
   AGENDAMENTO_CONCLUIDO: 'Concluiu atendimento',
   AGENDAMENTO_CANCELADO: 'Cancelou agendamento',
   PAGAMENTO_REGISTRADO: 'Registrou pagamento',

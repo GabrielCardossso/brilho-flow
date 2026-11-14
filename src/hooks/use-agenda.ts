@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { EtapaQuadro } from '@/domain/agendamento';
 import { api, FalhaDaApi, mensagemDeErro, paramsLimpos } from '@/lib/api';
 import { chaves } from '@/lib/chaves';
 import type {
@@ -164,5 +165,40 @@ export function useFormasDePagamento() {
       return resposta.data;
     },
     staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * Move um cartão do quadro. A tela já muda na hora (atualização otimista) e
+ * volta ao estado anterior se o servidor recusar, com a mensagem da regra.
+ */
+export function useMoverEtapa() {
+  const cache = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, etapa }: { id: number; etapa: EtapaQuadro }) => {
+      const resposta = await api.post<{ id: number; etapa: EtapaQuadro }>(`/agenda/${id}/etapa`, {
+        etapa,
+      });
+      return resposta.data;
+    },
+    onMutate: async ({ id, etapa }) => {
+      await cache.cancelQueries({ queryKey: chaves.agenda.todos });
+      const anteriores = cache.getQueriesData<RespostaDaAgenda>({ queryKey: chaves.agenda.todos });
+      cache.setQueriesData<RespostaDaAgenda>({ queryKey: chaves.agenda.todos }, (atual) =>
+        atual === undefined || !('itens' in atual)
+          ? atual
+          : { ...atual, itens: atual.itens.map((item) => (item.id === id ? { ...item, etapa } : item)) },
+      );
+      return { anteriores };
+    },
+    onError: (erro, _variaveis, contexto) => {
+      for (const [chave, dados] of contexto?.anteriores ?? []) cache.setQueryData(chave, dados);
+      toast.error(mensagemDeErro(erro));
+    },
+    onSettled: () => {
+      void cache.invalidateQueries({ queryKey: chaves.agenda.todos });
+      void cache.invalidateQueries({ queryKey: chaves.painel });
+    },
   });
 }

@@ -688,15 +688,23 @@ async function criarDemonstracao(
       ),
     );
 
-    // Atendimentos de hoje, relativos ao momento do seed, para o painel nascer
+    // Atendimentos de hoje, relativos ao momento do seed, para o painel e o quadro nascerem
     // com o chão da oficina preenchido: um concluído, dois em andamento e dois por vir.
     const minuto = 60 * 1000;
-    const hoje: Array<{ nomes: string[]; deslocamento: number; status: 'CONCLUIDO' | 'EM_ANDAMENTO' | 'AGENDADO' }> = [
-      { nomes: ['Lavagem premium SUV'], deslocamento: -200, status: 'CONCLUIDO' },
-      { nomes: ['Polimento técnico 2 etapas'], deslocamento: -70, status: 'EM_ANDAMENTO' },
-      { nomes: ['Higienização interna'], deslocamento: -25, status: 'EM_ANDAMENTO' },
-      { nomes: ['Hidratação de couro'], deslocamento: 50, status: 'AGENDADO' },
-      { nomes: ['Revitalização de plásticos'], deslocamento: 130, status: 'AGENDADO' },
+    const hoje: Array<{
+      nomes: string[];
+      deslocamento: number;
+      status: 'CONCLUIDO' | 'EM_ANDAMENTO' | 'AGENDADO';
+      etapa: string;
+    }> = [
+      { nomes: ['Lavagem premium SUV'], deslocamento: -280, status: 'CONCLUIDO', etapa: 'ENTREGUE' },
+      { nomes: ['Lavagem premium SUV'], deslocamento: -200, status: 'CONCLUIDO', etapa: 'AVISAR_CLIENTE' },
+      { nomes: ['Polimento técnico 2 etapas'], deslocamento: -70, status: 'EM_ANDAMENTO', etapa: 'FINALIZACAO' },
+      { nomes: ['Higienização interna'], deslocamento: -25, status: 'EM_ANDAMENTO', etapa: 'EM_ANDAMENTO' },
+      { nomes: ['Revitalização de plásticos'], deslocamento: -110, status: 'EM_ANDAMENTO', etapa: 'REVISAO' },
+      { nomes: ['Hidratação de couro'], deslocamento: 50, status: 'AGENDADO', etapa: 'NA_FILA' },
+      { nomes: ['Revitalização de plásticos'], deslocamento: 130, status: 'AGENDADO', etapa: 'AGUARDANDO_CARRO' },
+      { nomes: ['Hidratação de couro'], deslocamento: 200, status: 'AGENDADO', etapa: 'AGUARDANDO_CARRO' },
     ];
     const linhasHoje = hoje.map((item, indice) => {
         const lista = item.nomes.map(servicoPorNome);
@@ -709,6 +717,7 @@ async function criarDemonstracao(
           dataHora: new Date(Date.now() + item.deslocamento * minuto),
           duracaoMinutos: String(lista.reduce((total, servico) => total + servico.tempoEstimadoMinutos, 0)),
           status: item.status,
+          etapa: item.etapa,
           observacoes: 'Atendimento de demonstração para o dia de hoje.',
           subtotal: decimal(subtotal),
           desconto: '0.00',

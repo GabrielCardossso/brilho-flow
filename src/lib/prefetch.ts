@@ -25,6 +25,12 @@ const CONSULTAS: Record<string, (cliente: QueryClient) => Array<Promise<void>>> 
       c.prefetchQuery({ queryKey: chaves.agenda.lista(filtro), queryFn: buscar('/agenda', filtro) }),
     ];
   },
+  '/painel/quadro': (c) => {
+    const filtro = { periodo: 'DIA', pago: 'todos', busca: '' };
+    return [
+      c.prefetchQuery({ queryKey: chaves.agenda.lista(filtro), queryFn: buscar('/agenda', filtro) }),
+    ];
+  },
   '/painel/clientes': (c) => {
     const filtro = { busca: '', situacao: 'ativos', relacionamento: 'todos', ordenacao: 'nome' };
     return [

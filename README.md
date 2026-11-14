@@ -262,6 +262,18 @@ Todo movimento respeita `prefers-reduced-motion`.
 
 ---
 
+## Quadro do dia
+
+Em Operação, o **Quadro do dia** mostra os atendimentos de hoje em sete etapas: Aguardando o carro, Na fila, Em andamento, Finalização, Revisão, Avisar o cliente e Entregue. Cada cartão avança com um botão ou arrastando.
+
+- A etapa **detalha** o status, nunca o contradiz: as duas primeiras são "agendado", as três seguintes "em andamento" e as duas últimas "concluído". Mover um cartão de "agendado" para uma etapa de andamento inicia o atendimento, com a mesma regra do botão Iniciar da agenda.
+- Concluir **não** acontece arrastando: exige o consumo de produtos e o pagamento. O botão "Concluir atendimento" abre a conclusão de sempre.
+- Não se volta de status (iniciado não vira agendado, concluído não reabre). Dentro do mesmo status, vai-se e volta-se livremente.
+- Se o status muda por outro caminho (por exemplo, Iniciar na agenda), a etapa se ajusta sozinha. Cancelados não aparecem.
+- Persistência: coluna `etapa` em `agendamento` (migração 0006), nula significa a etapa inicial do status.
+
+---
+
 ## Verificação
 
 ```bash

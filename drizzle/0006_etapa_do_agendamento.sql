@@ -1,0 +1,1 @@
+ALTER TABLE "agendamento" ADD COLUMN "etapa" varchar(20);

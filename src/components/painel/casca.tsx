@@ -10,6 +10,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Gauge,
+  Kanban,
   LogOut,
   Menu,
   Moon,
@@ -58,6 +59,7 @@ const MENU: readonly GrupoDeMenu[] = [
     itens: [
       { href: '/painel', rotulo: 'Painel', icone: Gauge },
       { href: '/painel/agenda', rotulo: 'Agenda', icone: CalendarClock, recurso: 'AGENDA' },
+      { href: '/painel/quadro', rotulo: 'Quadro do dia', icone: Kanban, recurso: 'AGENDA' },
       { href: '/painel/clientes', rotulo: 'Clientes', icone: Users, recurso: 'CLIENTES' },
       { href: '/painel/servicos', rotulo: 'Serviços', icone: Wrench, recurso: 'SERVICOS' },
     ],
