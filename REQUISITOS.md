@@ -94,6 +94,7 @@ Especificação funcional do sistema: atores, casos de uso, regras de negócio e
 | UC-42 | Registrar receita avulsa | Funcionário+ | Entrada não vinculada a atendimento |
 | UC-43 | Gerar receita automática | Sistema | Ao receber o pagamento de um atendimento |
 | UC-44 | Gerar despesa automática | Sistema | Ao registrar entrada de estoque com valor |
+| UC-44b | Receber parcela | Funcionário+ *(Completo)* | Marca uma parcela como paga e gera a receita correspondente (RN-21) |
 
 ### 2.7 Relatórios
 
@@ -180,7 +181,7 @@ A janela ocupada vai de `dataHora` até `dataHora + soma das durações`. Consid
 - Responsáveis diferentes → **libera**.
 
 ### RN-06 · Não se agenda no passado
-Comparação feita com "agora" truncado ao minuto, no fuso `America/São_Paulo`.
+Comparação feita com "agora" truncado ao minuto, no fuso `America/Sao_Paulo`.
 
 ### RN-07 · Máquina de estados do atendimento
 | De | Ação | Para |
@@ -233,9 +234,9 @@ O administrador da empresa **não** altera razão social, nome fantasia, CNPJ, t
 | Relatório detalhado, exportação em Excel | ❌ | ✅ |
 | Estoque, financeiro | ❌ | ✅ |
 | Personalização de acento | ❌ | ✅ |
-| Limite de usuários ativos | **2** | **50** |
+| Limite de usuários ativos | **2** | **10** |
 
-O `SUPER_ADMIN` atravessa o gate. O limite de usuários é reavaliado tanto ao criar quanto ao reativar.
+O plano `COMPLETO` aparece na interface como **Pro**. O `SUPER_ADMIN` atravessa o gate. O limite de usuários é reavaliado ao criar, ao reativar e **ao trocar o plano**: rebaixar uma empresa que tem mais usuários ativos que o limite do novo plano é recusado até que o excesso seja arquivado. Tarifa de tabela: Básico R$ 79,90 e Pro R$ 149,90; a campanha vigente aplica R$ 59,90 e R$ 119,90 às novas assinaturas.
 
 ### RN-16 · Deduplicação de notificações
 Enquanto existir uma notificação **não lida** com a mesma referência (tipo + entidade), nenhuma nova é criada. Decisões de solicitação são exceção: sempre notificam.
@@ -254,7 +255,22 @@ Documentos, telefones e CEP são armazenados apenas com dígitos; e-mails em min
 Valores monetários circulam como string decimal e toda conta acontece em inteiros escalados (`BigInt`). Arredondamento sempre HALF_UP. Nenhum valor passa por ponto flutuante.
 
 ### RN-20 · Fuso único da operação
-Todo "hoje", "agora" e formatação usam `America/São_Paulo`, independentemente do fuso do servidor ou do navegador.
+Todo "hoje", "agora" e formatação usam `America/Sao_Paulo`, independentemente do fuso do servidor ou do navegador.
+
+### RN-21 · Parcelamento
+Apenas formas de pagamento de **crédito** parcelam, em 2 a 12 vezes. O total é dividido em centavos exatos, com o resto distribuído nas primeiras parcelas. A primeira parcela é recebida na hora (gera a receita); as demais vencem mês a mês e geram receita ao serem marcadas como pagas. O atendimento só fica `pago` quando a última parcela é recebida. Atendimento com parcelas não aceita pagamento à vista.
+
+### RN-22 · Cancelamento e dinheiro
+Cancelar um atendimento remove as parcelas **ainda não recebidas** (saem do "a receber"). O que já foi recebido permanece nos lançamentos; um eventual estorno ao cliente é registrado como despesa.
+
+### RN-23 · Unidades de estoque
+O saldo é persistido sempre na unidade base (`UN`, `ML` ou `G`). Litros e quilogramas são convertidos na entrada e reconvertidos para exibição. Quantidades e saldos têm limite (`numeric(12,3)`), e valores monetários têm limite de R$ 99.999.999,99: acima disso a validação recusa em vez de falhar no banco.
+
+### RN-24 · Administrador da empresa
+Toda empresa mantém ao menos um administrador ativo: rebaixar ou arquivar o último é recusado.
+
+### RN-25 · Atendimento exige cliente ativo
+Não se agenda para cliente arquivado, mesmo que o veículo esteja ativo. Concluir um atendimento com consumo de material exige o plano com Estoque.
 
 ---
 
@@ -265,10 +281,11 @@ Todo "hoje", "agora" e formatação usam `America/São_Paulo`, independentemente
 | RNF-01 | **Segurança de tipos** | TypeScript `strict` com `noUncheckedIndexedAccess` e `exactOptionalPropertyTypes`. `any` proibido pelo ESLint |
 | RNF-02 | **Validação de fronteira** | Todo dado que entra (corpo, query, variáveis de ambiente) passa por Zod. Os tipos derivam do schema |
 | RNF-03 | **Isolamento multiempresa** | `empresaId` vem sempre da sessão assinada, nunca do cliente |
-| RNF-04 | **Autenticação** | Cookie `httpOnly`, `SameSite=Lax`, assinado com HS256; `Secure` em produção. Senha com bcrypt custo 10 |
+| RNF-04 | **Autenticação** | Cookie `httpOnly`, `SameSite=Lax`, assinado com HS256; `Secure` em produção. Senha com bcrypt custo 10. A cada requisição o usuário é relido: arquivado, movido de empresa ou com senha trocada perde a sessão, e o papel vem do banco |
+| RNF-04b | **Proteção contra abuso** | Limite de tentativas de login (por IP e por e-mail) e de pagamentos, com contador persistente em `controle_rate_limit` |
 | RNF-05 | **Autorização em três camadas** | Rota (middleware) → perfil (guard) → recurso do plano (gate) |
 | RNF-06 | **Integridade no banco** | Chaves estrangeiras, *check constraints* e índices únicos parciais replicam as invariantes do domínio |
-| RNF-07 | **Concorrência** | `SELECT ... FOR UPDATE` nas linhas de estoque; operações compostas em transação |
+| RNF-07 | **Concorrência** | `SELECT ... FOR UPDATE` nas linhas de estoque e no atendimento ao concluir/pagar; trava consultiva por empresa na criação de agendamentos (conflito de horário atômico); mudança de status por compare-and-set; operações compostas em transação |
 | RNF-08 | **Acessibilidade** | Contraste AA verificado programaticamente, foco visível, navegação por teclado, HTML semântico, `aria-*` nos componentes interativos, atalho para o conteúdo |
 | RNF-09 | **Movimento responsável** | Transições de 120–180 ms; `prefers-reduced-motion` desliga animações |
 | RNF-10 | **Responsividade** | Layout de 320 px a ultrawide; navegação em gaveta no mobile |

@@ -37,21 +37,23 @@ cp .env.example .env.local
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 # 3. Banco
-yarn db:migrate     # aplica o schema
+yarn db:migrate     # aplica o schema (Postgres comum ou Supabase)
 yarn db:seed        # cria o admin da plataforma e uma empresa de demonstração
 
 # 4. Desenvolvimento
 yarn dev            # http://localhost:3000
 ```
 
-O seed cria duas contas, ambas com a senha definida em `SEED_SUPER_ADMIN_SENHA`:
+O seed cria duas contas:
 
-| Conta | Perfil | Para quê |
-| --- | --- | --- |
-| valor de `SEED_SUPER_ADMIN_EMAIL` | Administrador da plataforma | Console de empresas, assinaturas e auditoria |
-| `ana@garagemprime.com.br` | Administradora da empresa demo | Operação completa com dados de exemplo |
+| Conta | Perfil | Senha | Para quê |
+| --- | --- | --- | --- |
+| valor de `SEED_SUPER_ADMIN_EMAIL` | Administrador da plataforma | `SEED_SUPER_ADMIN_SENHA` | Console de empresas, assinaturas e auditoria |
+| `demo@lumenauto.com.br` | Administrador da empresa demo (Lumen Auto Studio) | `SEED_DEMO_SENHA`, ou uma senha aleatória impressa no terminal ao final do seed | Operação completa com seis meses de dados de exemplo |
 
-> O seed é idempotente: se o administrador da plataforma já existir, ele não faz nada.
+- Nenhuma senha fica fixa no repositório.
+- Em `NODE_ENV=production` a empresa demo **não** é criada, a menos que `SEED_DEMO=true`.
+- O seed é idempotente. `SEED_DEMO_RECRIAR=true` apaga e recria apenas a empresa demo.
 
 ---
 
@@ -68,6 +70,9 @@ Validadas por Zod no boot (`src/env.ts`). Ausência ou formato inválido derruba
 | `SEED_SUPER_ADMIN_EMAIL` | seed | E-mail do administrador da plataforma |
 | `SEED_SUPER_ADMIN_SENHA` | seed | Senha inicial — troque após o primeiro acesso |
 | `SEED_SUPER_ADMIN_NOME` | seed | Nome de exibição |
+| `SEED_DEMO_SENHA` | — | Senha do usuário demo. Sem ela, o seed gera uma aleatória |
+| `SEED_DEMO` | — | `true` para criar a empresa demo em produção |
+| `SEED_DEMO_RECRIAR` | — | `true` para apagar e recriar a empresa demo |
 
 Nenhum segredo é versionado. `.env*` está no `.gitignore`.
 
@@ -107,6 +112,7 @@ src/
 │   ├── agendamento.ts      Totais, conflito de horário, máquina de estados
 │   ├── estoque.ts          Custo por embalagem, validação de baixa, níveis
 │   ├── plano.ts            Matriz plano × recurso, ciclo da assinatura
+│   ├── financeiro.ts       Parcelamento em até 12x, sem perder centavos
 │   ├── cliente.ts          Classificação de relacionamento, links de contato
 │   ├── relatorio.ts        Períodos e indicadores
 │   ├── tema.ts             Acentos, contraste AA, tokens derivados
@@ -170,7 +176,7 @@ A interface é orientada a dados que mudam com frequência (agenda, saldo, finan
 *Um teste desta suíte pegou um bug real de conversão de escala no custo unitário.*
 
 ### Por que `moment-timezone`
-A operação inteira vive em `America/São_Paulo`. Um único módulo (`domain/shared/tempo.ts`) concentra "agora", "hoje" e formatação, e nenhum outro arquivo chama `new Date()` para decidir regra.
+A operação inteira vive em `America/Sao_Paulo`. Um único módulo (`domain/shared/tempo.ts`) concentra "agora", "hoje" e formatação, e nenhum outro arquivo chama `new Date()` para decidir regra.
 **Trade-off:** `moment` está em manutenção e é mais pesado que alternativas modernas. Foi requisito explícito do projeto e está isolado atrás de um módulo — trocar por `date-fns-tz` ou `Temporal` mexe em um arquivo só.
 
 ### Por que fontes em runtime e não `next/font`
@@ -185,20 +191,21 @@ Existia uma tabela de funcionários sem nenhuma tela de cadastro: o seletor de r
 
 ## Modelo de dados
 
-20 tabelas, todas com `empresa_id` (exceto `empresa`) e auditoria de criação/atualização.
+22 tabelas, todas com `empresa_id` (exceto `empresa` e `controle_rate_limit`) e auditoria de criação/atualização.
 
 | Área | Tabelas |
 | --- | --- |
 | Organização | `empresa`, `usuario`, `configuracao`, `solicitacao_alteracao_empresa` |
 | Operação | `cliente`, `veiculo`, `categoria_servico`, `servico`, `agendamento`, `agendamento_servico` |
 | Estoque | `categoria_produto`, `produto`, `estoque`, `movimentacao_estoque` |
-| Financeiro | `forma_pagamento`, `receita`, `despesa` |
-| Plataforma | `log`, `historico_acesso`, `notificacao` |
+| Financeiro | `forma_pagamento`, `receita`, `parcela_recebimento`, `despesa` |
+| Plataforma | `log`, `historico_acesso`, `notificacao`, `controle_rate_limit` |
 
 Invariantes replicadas no banco, não só no código:
 
 - `agendamento`: `subtotal > 0`, `0 ≤ desconto < subtotal`, `total = subtotal − desconto`
-- `receita`: índice único parcial em `agendamento_id` — um atendimento não é pago duas vezes
+- `receita`: índice único parcial em `agendamento_id` (recebimentos à vista) e em `parcela_recebimento_id` — um atendimento não é pago duas vezes
+- `parcela_recebimento`: 2 a 12 parcelas, valor positivo, `paga` coerente com `data_pagamento`
 - `solicitacao_alteracao_empresa`: índice único parcial em `empresa_id WHERE status = 'PENDENTE'`
 - `cliente`: índice único parcial em `(empresa_id, cpf_cnpj) WHERE cpf_cnpj IS NOT NULL`
 - Formato de CNPJ, telefone, CEP e placa validado por *check constraint*
@@ -211,7 +218,9 @@ Invariantes replicadas no banco, não só no código:
 - **Senha** com bcrypt custo 10.
 - **Autorização em três camadas**: rota (middleware) → perfil (guard) → recurso do plano (gate).
 - **Isolamento multiempresa**: `empresaId` sempre da sessão assinada, nunca de parâmetro do cliente.
-- **Revalidação por requisição**: empresa bloqueada perde acesso na próxima ação, sem esperar o cookie expirar.
+- **Revalidação por requisição**: empresa bloqueada perde acesso na próxima ação, sem esperar o cookie expirar. O **usuário** também é relido a cada requisição: arquivado, movido de empresa ou com a senha trocada perde a sessão na hora, e o papel vigente vem do banco (não do cookie).
+- **Limite de tentativas**: login (por IP e por e-mail) e pagamentos têm contador persistente no banco; o middleware ainda aplica um escudo de rajada por instância.
+- **Limitação conhecida**: o logout apaga o cookie do navegador, mas o token é sem estado e só deixa de valer ao expirar, trocar a senha ou arquivar o usuário.
 - **Cabeçalhos**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, HSTS de 1 ano.
 - **Mensagem de login única** para e-mail inexistente e senha errada — não revela quais contas existem.
 - **Trilha de auditoria** por empresa e histórico de acesso por usuário.
@@ -244,11 +253,11 @@ Estado atual desta entrega:
 | --- | --- |
 | `tsc --noEmit` (strict) | ✅ sem erros |
 | ESLint | ✅ sem erros e sem avisos |
-| Vitest — domínio | ✅ 49 testes |
-| `next build` | ✅ 17 páginas + 47 rotas de API |
+| Vitest — domínio e validações | ✅ 68 testes |
+| `next build` | ✅ 16 páginas + 65 rotas de API |
 | Java remanescente | ✅ nenhum arquivo |
 
-**Não verificado neste ambiente:** as migrations e o seed não foram executados contra um PostgreSQL real, porque não havia banco disponível na máquina de desenvolvimento usada. O SQL é gerado pelo `drizzle-kit` a partir do schema tipado, mas **rode `yarn db:migrate` em uma base limpa antes de considerar o schema validado**.
+**Não verificado neste ambiente:** as migrations e o seed ainda não foram executados contra um PostgreSQL real, e as regras que dependem de banco (travas, transações, índices parciais) não têm teste automatizado — os testes cobrem o domínio puro e as validações. **Rode `yarn db:migrate` e `yarn db:seed` em uma base limpa antes de considerar o schema validado.** Testes de integração com banco real (testcontainers) e e2e (Playwright) seguem como próximo passo.
 
 ---
 
