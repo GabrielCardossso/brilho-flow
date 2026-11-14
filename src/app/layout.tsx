@@ -6,13 +6,13 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'EsteticaFlow — gestão para estética automotiva',
-    template: '%s · EsteticaFlow',
+    default: 'Brilhoflow — gestão para estética automotiva',
+    template: '%s · Brilhoflow',
   },
   description:
     'Agenda, clientes, estoque, financeiro e relatórios da sua estética automotiva em um só painel. Feito para quem trabalha com carro.',
-  applicationName: 'EsteticaFlow',
-  authors: [{ name: 'EsteticaFlow' }],
+  applicationName: 'Brilhoflow',
+  authors: [{ name: 'Brilhoflow' }],
   keywords: [
     'estética automotiva',
     'lava-rápido',
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    siteName: 'EsteticaFlow',
-    title: 'EsteticaFlow — gestão para estética automotiva',
+    siteName: 'Brilhoflow',
+    title: 'Brilhoflow — gestão para estética automotiva',
     description:
       'Agenda, clientes, estoque, financeiro e relatórios em um só painel. Feito para quem trabalha com carro.',
   },
@@ -48,7 +48,7 @@ export const viewport: Viewport = {
  * fallback do sistema segura a interface enquanto elas chegam.
  */
 const FONTES_GOOGLE =
-  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
+  'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Geist:wght@400;500;600;700&display=swap';
 
 export default async function LayoutRaiz({ children }: { children: React.ReactNode }) {
   const jar = await cookies();

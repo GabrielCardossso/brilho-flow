@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { ExperienciaEsteticaFlow } from '@/components/landing/experiencia-esteticaflow';
+import { Landing } from '@/components/landing/landing';
 
 export const metadata: Metadata = {
-  title: 'EsteticaFlow — gestão no ritmo da sua operação',
-  description: 'Agenda, clientes, estoque e financeiro para estética automotiva em uma experiência de gestão clara, precisa e conectada.',
+  title: 'Brilhoflow — agenda, estoque e caixa para estética automotiva',
+  description:
+    'Agenda por box, estoque de produto e financeiro da sua estética automotiva em um painel só.',
 };
 
 export default function PaginaInicial() {
-  return <ExperienciaEsteticaFlow />;
+  return <Landing />;
 }

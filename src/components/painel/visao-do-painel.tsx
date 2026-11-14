@@ -31,6 +31,7 @@ import { Cartao, CartaoCabecalho, CartaoCorpo } from '@/components/ui/cartao';
 import { Esqueleto } from '@/components/ui/esqueleto';
 import { Etiqueta } from '@/components/ui/etiqueta';
 import { Indicador, Medidor } from '@/components/ui/indicador';
+import { Placa } from '@/components/ui/placa';
 import { Vazio } from '@/components/ui/vazio';
 import { CATALOGO_RELACIONAMENTO, type Relacionamento } from '@/domain/cliente';
 import { ROTULO_STATUS, type StatusAgendamento } from '@/domain/agendamento';
@@ -265,8 +266,9 @@ export function VisaoDoPainel() {
                       <p className="truncate text-sm font-medium text-[var(--tinta)]">
                         {item.clienteNome}
                       </p>
-                      <p className="truncate text-xs text-[var(--tinta-tenue)]">
-                        {item.veiculoModelo} · {item.veiculoPlaca}
+                      <p className="mt-1 flex items-center gap-2 truncate text-xs text-[var(--tinta-tenue)]">
+                        <Placa valor={item.veiculoPlaca} />
+                        <span className="truncate">{item.veiculoModelo}</span>
                       </p>
                     </div>
                     <Etiqueta tom={TOM_STATUS[item.status as StatusAgendamento]}>

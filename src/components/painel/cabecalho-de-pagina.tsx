@@ -10,17 +10,13 @@ export function CabecalhoDePagina({
   acao?: ReactNode | undefined;
 }) {
   return (
-    <header className="painel-cabecalho mb-6 flex flex-wrap items-end justify-between gap-4">
+    <header className="painel-cabecalho mb-7 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-[var(--tinta)]">
-          <span
-            className="h-6 w-1 shrink-0 rounded-full bg-[var(--acento-ativo)] shadow-[0_0_18px_rgb(var(--acento-rgb)/0.45)]"
-            aria-hidden
-          />
+        <h1 className="text-[1.75rem] font-bold leading-tight tracking-[-0.035em] text-[var(--tinta)] sm:text-3xl">
           {titulo}
         </h1>
         {descricao !== undefined ? (
-          <p className="mt-1 text-sm text-[var(--tinta-suave)]">{descricao}</p>
+          <p className="mt-1.5 max-w-2xl text-sm text-[var(--tinta-suave)]">{descricao}</p>
         ) : null}
       </div>
       {acao !== undefined ? (
@@ -37,7 +33,7 @@ export function AvisoDePlano({ recurso }: { recurso: string }) {
         {recurso} faz parte do plano Pro
       </h2>
       <p className="max-w-md text-sm text-[var(--tinta-suave)]">
-        Fale com a EsteticaFlow para liberar este módulo. Seu histórico atual é preservado
+        Fale com o Brilhoflow para liberar este módulo. Seu histórico atual é preservado
         integralmente na troca de plano.
       </p>
     </div>

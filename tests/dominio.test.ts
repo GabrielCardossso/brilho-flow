@@ -469,7 +469,7 @@ describe('períodos de relatório', () => {
 describe('tema', () => {
   it('ignora personalização fora do plano', () => {
     const tema = resolverTema({ cor: 'turbina', hex: '#06b6d4', modo: 'claro' }, false);
-    expect(tema.acento).toBe('tacometro');
+    expect(tema.acento).toBe('sinal');
     expect(tema.modo).toBe('claro');
   });
 
@@ -480,7 +480,7 @@ describe('tema', () => {
   });
 
   it('cai no padrão diante de valor inválido', () => {
-    expect(resolverTema({ cor: 'roxo-neon' }, true).acento).toBe('tacometro');
+    expect(resolverTema({ cor: 'roxo-neon' }, true).acento).toBe('sinal');
   });
 
   it('ajusta o acento até atingir contraste AA', () => {

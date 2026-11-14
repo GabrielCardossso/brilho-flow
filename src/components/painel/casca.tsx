@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Marca, Simbolo } from '@/components/marca';
 import { Botao } from '@/components/ui/botao';
@@ -33,6 +33,7 @@ import type { ModoTema } from '@/domain/tema';
 import { formatarData } from '@/domain/shared/tempo';
 import { useSessao, type SessaoAtual } from '@/hooks/use-sessao';
 import { api } from '@/lib/api';
+import { prefetchDaRota } from '@/lib/prefetch';
 import { aplicarTemaNoDocumento } from '@/lib/tema-cliente';
 import { cn } from '@/lib/utils';
 
@@ -88,22 +89,38 @@ export function Casca({
   sessaoInicial: SessaoAtual;
 }) {
   const caminho = usePathname();
+  const roteador = useRouter();
   const clienteDeCache = useQueryClient();
   const { data: sessao } = useSessao(sessaoInicial);
   const [menuAberto, setMenuAberto] = useState(false);
-  const [modo, setModo] = useState<ModoTema>(modoInicial === 'sistema' ? 'escuro' : modoInicial);
+  const [indoPara, setIndoPara] = useState<string | null>(null);
+  const [modo, setModo] = useState<ModoTema>(modoInicial === 'sistema' ? 'claro' : modoInicial);
 
   const naoLidas = sessao?.notificacoesNaoLidas ?? 0;
   const ehSuperAdmin = papel === 'SUPER_ADMIN';
 
   useEffect(() => {
     setMenuAberto(false);
+    setIndoPara(null);
   }, [caminho]);
+
+  // Ao chegar na nova tela, o foco vai para o conteúdo (leitor de tela e teclado).
+  useEffect(() => {
+    document.getElementById('conteudo')?.focus({ preventScroll: true });
+  }, [caminho]);
+
+  const aquecer = useCallback(
+    (href: string) => {
+      roteador.prefetch(href);
+      prefetchDaRota(clienteDeCache, href);
+    },
+    [roteador, clienteDeCache],
+  );
 
   useEffect(() => {
     if (sessao === undefined) return;
     const modoDaSessao =
-      sessao.preferencias.modo === 'sistema' ? 'escuro' : sessao.preferencias.modo;
+      sessao.preferencias.modo === 'sistema' ? 'claro' : sessao.preferencias.modo;
     setModo(modoDaSessao);
     aplicarTemaNoDocumento(sessao.preferencias);
   }, [sessao]);
@@ -170,23 +187,29 @@ export function Casca({
             key={item.href}
             href={item.href}
             aria-current={selecionado ? 'page' : undefined}
+            onPointerEnter={() => aquecer(item.href)}
+            onFocus={() => aquecer(item.href)}
+            onClick={() => {
+              if (!selecionado) setIndoPara(item.href);
+            }}
             className={cn(
-              'painel-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[var(--duracao-curta)]',
+              'painel-link group relative flex items-center gap-3 rounded-[0.7rem] px-3 py-2.5 text-sm',
               selecionado
-                ? 'bg-[var(--acento-fraco)] font-medium text-[var(--acento-ativo)]'
+                ? 'bg-[var(--superficie-inversa)] font-semibold text-[var(--tinta-inversa)]'
                 : 'text-[var(--tinta-suave)] hover:bg-[var(--superficie-2)] hover:text-[var(--tinta)]',
+              indoPara === item.href && 'opacity-70',
             )}
           >
-            {selecionado ? (
-              <span
-                aria-hidden
-                className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-[var(--acento-ativo)]"
-              />
-            ) : null}
-            <Icone className="size-4 shrink-0" aria-hidden />
+            <Icone
+              className={cn(
+                'size-4 shrink-0',
+                selecionado ? 'text-[var(--acento)]' : 'text-[var(--tinta-tenue)] group-hover:text-[var(--tinta)]',
+              )}
+              aria-hidden
+            />
             <span className="flex-1 truncate">{item.rotulo}</span>
             {item.rotulo === 'Notificações' && naoLidas > 0 ? (
-              <span className="numerico grid min-w-5 place-items-center rounded-full bg-[var(--acento-ativo)] px-1.5 text-[11px] font-semibold text-[var(--acento-texto)]">
+              <span className="numerico grid min-w-5 place-items-center rounded-full bg-[var(--acento)] px-1.5 text-[11px] font-semibold text-[var(--acento-texto)]">
                 {naoLidas > 99 ? '99+' : naoLidas}
               </span>
             ) : null}
@@ -227,6 +250,11 @@ export function Casca({
 
   return (
     <div className="flex min-h-dvh">
+      {indoPara !== null ? (
+        <div className="barra-navegacao" role="progressbar" aria-label="Carregando a página">
+          <span />
+        </div>
+      ) : null}
       {/* -------------------------------- Lateral fixa (desktop) ---------- */}
       <aside className="painel-lateral sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[var(--borda)] lg:flex">
         <div className="flex h-[72px] items-center border-b border-[var(--borda)] px-5">
@@ -267,7 +295,7 @@ export function Casca({
 
       {/* -------------------------------- Conteúdo ------------------------ */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="painel-topo sticky top-0 z-30 flex h-[72px] items-center gap-3 border-b border-[var(--borda)] bg-[var(--superficie-0)]/85 px-4 backdrop-blur-md sm:px-6">
+        <header className="painel-topo sticky top-0 z-30 flex h-[68px] items-center gap-3 border-b border-[var(--borda)] px-4 backdrop-blur-md sm:px-6">
           <button
             type="button"
             onClick={() => setMenuAberto(true)}
@@ -330,8 +358,12 @@ export function Casca({
           </div>
         ) : null}
 
-        <main id="conteudo" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          {children}
+        <main
+          id="conteudo"
+          tabIndex={-1}
+          className="min-w-0 flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
+        >
+          <div className="mx-auto w-full max-w-[1400px]">{children}</div>
         </main>
       </div>
     </div>
