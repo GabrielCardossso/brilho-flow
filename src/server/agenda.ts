@@ -1,5 +1,5 @@
-import { and, asc, between, eq, inArray, sql } from 'drizzle-orm';
-import type { Contexto } from '@/auth/contexto';
+import { and, asc, between, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { exigirRecurso, type Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import {
   agendamento,
@@ -33,6 +33,7 @@ import { dividirEmParcelas, permiteParcelamento } from '@/domain/financeiro';
 import { conflito, falha, naoEncontrado, ok, validacao, type Result } from '@/domain/result';
 import { Quantidade } from '@/domain/shared/decimal';
 import {
+  adicionarMinutos,
   fimDaSemana,
   fimDoDia,
   fimDoMes,
@@ -298,6 +299,17 @@ export async function criarAgendamento(
   const dataHora = validarDataHora(dados.dataHora);
   if (!dataHora.ok) return dataHora;
 
+  const [donoCliente] = await db
+    .select({ ativo: cliente.ativo })
+    .from(cliente)
+    .where(and(eq(cliente.id, dados.clienteId), eq(cliente.empresaId, contexto.empresaId)))
+    .limit(1);
+
+  if (donoCliente === undefined) return falha(naoEncontrado('Cliente não encontrado.'));
+  if (!donoCliente.ativo) {
+    return falha(conflito('Este cliente está arquivado. Reative-o para agendar.', 'clienteId'));
+  }
+
   const [donoVeiculo] = await db
     .select({ clienteId: veiculo.clienteId, ativo: veiculo.ativo })
     .from(veiculo)
@@ -350,49 +362,59 @@ export async function criarAgendamento(
   const totais = calcularTotais(servicosSelecionados, dados.desconto);
   if (!totais.ok) return totais;
 
-  const dia = m(dataHora.value);
-  const existentes = await db
-    .select({
-      id: agendamento.id,
-      dataHora: agendamento.dataHora,
-      duracaoMinutos: agendamento.duracaoMinutos,
-      responsavelId: agendamento.responsavelId,
-    })
-    .from(agendamento)
-    .where(
-      and(
-        eq(agendamento.empresaId, contexto.empresaId),
-        inArray(agendamento.status, [...STATUS_OCUPAM_AGENDA]),
-        between(agendamento.dataHora, inicioDoDia(dia), fimDoDia(dia)),
-      ),
-    );
-
-  const janelas: JanelaAgendamento[] = existentes.map((e) => ({
-    id: e.id,
-    dataHora: new Date(e.dataHora),
-    duracaoMinutos: Number(e.duracaoMinutos),
-    responsavelId: e.responsavelId,
-  }));
-
-  const avaliacao = avaliarConflito(
-    {
-      dataHora: dataHora.value,
-      duracaoMinutos: totais.value.duracaoMinutos,
-      responsavelId: dados.responsavelId,
-    },
-    janelas,
-  );
-
-  if (avaliacao.tipo === 'BLOQUEADO') {
-    const falhaConflito = falhaDeConflito(avaliacao);
-    if (falhaConflito !== null) return falha(falhaConflito);
-  }
-  if (avaliacao.tipo === 'PRECISA_CONFIRMACAO' && !dados.confirmarConflito) {
-    const falhaConflito = falhaDeConflito(avaliacao);
-    if (falhaConflito !== null) return falha(falhaConflito);
-  }
+  // Janela de busca: de dois dias antes (atendimento longo que atravessa a
+  // meia-noite) ate o fim do novo atendimento.
+  const inicioBusca = m(dataHora.value).subtract(2, 'days').toDate();
+  const fimCandidato = adicionarMinutos(dataHora.value, totais.value.duracaoMinutos);
 
   const criado = await db.transaction(async (tx) => {
+    // Serializa as criacoes da mesma empresa. Sem a trava, dois pedidos
+    // simultaneos leem a agenda vazia e ambos passam pela checagem de conflito.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${`agendamento:${contexto.empresaId}`}))`,
+    );
+
+    const existentes = await tx
+      .select({
+        id: agendamento.id,
+        dataHora: agendamento.dataHora,
+        duracaoMinutos: agendamento.duracaoMinutos,
+        responsavelId: agendamento.responsavelId,
+      })
+      .from(agendamento)
+      .where(
+        and(
+          eq(agendamento.empresaId, contexto.empresaId),
+          inArray(agendamento.status, [...STATUS_OCUPAM_AGENDA]),
+          gte(agendamento.dataHora, inicioBusca),
+          lt(agendamento.dataHora, fimCandidato),
+        ),
+      );
+
+    const janelas: JanelaAgendamento[] = existentes.map((e) => ({
+      id: e.id,
+      dataHora: new Date(e.dataHora),
+      duracaoMinutos: Number(e.duracaoMinutos),
+      responsavelId: e.responsavelId,
+    }));
+
+    const avaliacao = avaliarConflito(
+      {
+        dataHora: dataHora.value,
+        duracaoMinutos: totais.value.duracaoMinutos,
+        responsavelId: dados.responsavelId,
+      },
+      janelas,
+    );
+
+    if (
+      avaliacao.tipo === 'BLOQUEADO' ||
+      (avaliacao.tipo === 'PRECISA_CONFIRMACAO' && !dados.confirmarConflito)
+    ) {
+      const falhaConflito = falhaDeConflito(avaliacao);
+      if (falhaConflito !== null) return { erro: falhaConflito } as const;
+    }
+
     const [novo] = await tx
       .insert(agendamento)
       .values({
@@ -423,8 +445,10 @@ export async function criarAgendamento(
       })),
     );
 
-    return novo;
+    return { id: novo.id } as const;
   });
+
+  if ('erro' in criado) return falha(criado.erro);
 
   await registrar({
     empresaId: contexto.empresaId,
@@ -449,19 +473,62 @@ export async function mudarStatus(
 
   if (atual === undefined) return falha(naoEncontrado('Agendamento não encontrado.'));
 
+  if (acao === 'CONCLUIR') {
+    return falha(validacao('Para concluir, use a conclusão do atendimento (baixa de estoque e pagamento).'));
+  }
+
   const destino = transicionar(atual.status, acao);
   if (!destino.ok) return destino;
 
-  await db
-    .update(agendamento)
-    .set({ status: destino.value })
-    .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)));
+  const resultado = await db.transaction(async (tx) => {
+    // Compare-and-set: so grava se o status ainda e o que foi lido acima.
+    const [alterado] = await tx
+      .update(agendamento)
+      .set({ status: destino.value })
+      .where(
+        and(
+          eq(agendamento.id, id),
+          eq(agendamento.empresaId, contexto.empresaId),
+          eq(agendamento.status, atual.status),
+        ),
+      )
+      .returning({ id: agendamento.id });
+
+    if (alterado === undefined) {
+      return {
+        erro: conflito('Este atendimento foi alterado por outra pessoa. Atualize a tela.'),
+      } as const;
+    }
+
+    // Atendimento cancelado nao gera mais cobranca: parcelas em aberto saem do
+    // "a receber". O que ja foi recebido permanece nos lancamentos.
+    let parcelasRemovidas = 0;
+    if (acao === 'CANCELAR') {
+      const removidas = await tx
+        .delete(parcelaRecebimento)
+        .where(
+          and(
+            eq(parcelaRecebimento.agendamentoId, id),
+            eq(parcelaRecebimento.empresaId, contexto.empresaId),
+            eq(parcelaRecebimento.paga, false),
+          ),
+        )
+        .returning({ id: parcelaRecebimento.id });
+      parcelasRemovidas = removidas.length;
+    }
+    return { parcelasRemovidas } as const;
+  });
+
+  if ('erro' in resultado) return falha(resultado.erro);
 
   await registrar({
     empresaId: contexto.empresaId,
     usuarioId: contexto.usuario.usuarioId,
     acao: acao === 'INICIAR' ? 'AGENDAMENTO_INICIADO' : 'AGENDAMENTO_CANCELADO',
-    detalhes: `Agendamento ${id}`,
+    detalhes:
+      resultado.parcelasRemovidas > 0
+        ? `Agendamento ${id} — ${resultado.parcelasRemovidas} parcela(s) em aberto removida(s)`
+        : `Agendamento ${id}`,
   });
 
   return ok({ id, status: destino.value });
@@ -497,6 +564,11 @@ export async function concluirAgendamento(
 
   const destino = transicionar(atual.status, 'CONCLUIR');
   if (!destino.ok) return destino;
+
+  if (dados.consumos.length > 0) {
+    const acessoEstoque = exigirRecurso(contexto, 'ESTOQUE');
+    if (!acessoEstoque.ok) return acessoEstoque;
+  }
 
   const consumosAgregados = new Map<number, ConcluirPayload['consumos']>();
   for (const consumo of dados.consumos) {
@@ -547,6 +619,23 @@ export async function concluirAgendamento(
     .where(eq(agendamentoServico.agendamentoId, id));
 
   const resultado = await db.transaction(async (tx) => {
+    // Trava o atendimento e confere de novo: a leitura de cima foi feita fora
+    // da transacao, entao outra requisicao pode ter concluido, cancelado ou
+    // pago o mesmo atendimento nesse intervalo (e o estoque sairia em dobro).
+    const [travado] = await tx
+      .select({ status: agendamento.status, pago: agendamento.pago })
+      .from(agendamento)
+      .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)))
+      .for('update')
+      .limit(1);
+
+    if (travado === undefined) return { erro: naoEncontrado('Agendamento não encontrado.') } as const;
+    if (travado.status !== 'EM_ANDAMENTO') {
+      return {
+        erro: conflito('Este atendimento foi alterado por outra pessoa. Atualize a tela.'),
+      } as const;
+    }
+
     for (const [produtoId, consumos] of consumosAgregados) {
       const [saldo] = await tx
         .select({
@@ -598,7 +687,7 @@ export async function concluirAgendamento(
       });
     }
 
-    let pago = atual.pago;
+    let pago = travado.pago;
     if (formaValida !== null && !pago) {
       if (dados.parcelas > 1) {
         const criadas = await tx
@@ -730,7 +819,18 @@ export async function registrarPagamento(
     .innerJoin(servico, eq(servico.id, agendamentoServico.servicoId))
     .where(eq(agendamentoServico.agendamentoId, id));
 
-  await db.transaction(async (tx) => {
+  const gravado = await db.transaction(async (tx) => {
+    const [travado] = await tx
+      .select({ status: agendamento.status, pago: agendamento.pago })
+      .from(agendamento)
+      .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)))
+      .for('update')
+      .limit(1);
+
+    if (travado === undefined) return { erro: naoEncontrado('Agendamento não encontrado.') } as const;
+    const recheck = validarPagamento(travado.status, travado.pago);
+    if (!recheck.ok) return { erro: recheck.error } as const;
+
     if (dados.parcelas > 1) {
       const criadas = await tx
         .insert(parcelaRecebimento)
@@ -778,7 +878,10 @@ export async function registrarPagamento(
       .update(agendamento)
       .set({ pago: dados.parcelas === 1 })
       .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)));
+    return { ok: true } as const;
   });
+
+  if ('erro' in gravado) return falha(gravado.erro);
 
   await registrar({
     empresaId: contexto.empresaId,
