@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { carregarContexto } from '@/auth/contexto';
 import { lerPreferencias } from '@/server/configuracoes';
-import { contarNaoLidas } from '@/server/notificacoes';
+import { contarNaoLidas, sincronizarAlertasSeNecessario } from '@/server/notificacoes';
 import { respostaDeFalha } from '@/server/api';
 
 export const runtime = 'nodejs';
@@ -10,6 +10,8 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const contexto = await carregarContexto();
   if (!contexto.ok) return respostaDeFalha(contexto.error);
+
+  await sincronizarAlertasSeNecessario(contexto.value);
 
   const [preferencias, naoLidas] = await Promise.all([
     lerPreferencias(contexto.value),

@@ -4,7 +4,7 @@ import { carregarContexto } from '@/auth/contexto';
 import { Casca } from '@/components/painel/casca';
 import { tokensDeAcento } from '@/domain/tema';
 import { lerPreferencias } from '@/server/configuracoes';
-import { contarNaoLidas } from '@/server/notificacoes';
+import { contarNaoLidas, sincronizarAlertasSeNecessario } from '@/server/notificacoes';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,8 @@ export default async function LayoutDoPainel({ children }: { children: ReactNode
     const motivo = contexto.error.codigo === 'NAO_AUTENTICADO' ? 'sessao' : 'bloqueio';
     redirect(`/login?motivo=${motivo}`);
   }
+
+  await sincronizarAlertasSeNecessario(contexto.value);
 
   const [preferencias, notificacoesNaoLidas] = await Promise.all([
     lerPreferencias(contexto.value),

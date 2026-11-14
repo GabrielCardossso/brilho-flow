@@ -5,10 +5,11 @@ import { notificacao } from '@/db/schema';
 import { precisaReativacao } from '@/domain/cliente';
 import { diasEmAtraso } from '@/domain/plano';
 import { falha, naoEncontrado, ok, type Result } from '@/domain/result';
-import { hojeISO } from '@/domain/shared/tempo';
+import { agora, hojeISO } from '@/domain/shared/tempo';
 import { truncar } from '@/domain/shared/texto';
-import { alertasDeEstoque } from './estoque';
 import { listarClientes } from './clientes';
+import { gravarParametro, lerParametros } from './configuracoes';
+import { alertasDeEstoque } from './estoque';
 
 type TipoNotificacao =
   | 'ESTOQUE_BAIXO'
@@ -204,10 +205,36 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
   }
 }
 
+const CHAVE_ULTIMA_SINCRONIZACAO = 'notificacoes.sincronizado_em';
+const INTERVALO_SINCRONIZACAO_MS = 5 * 60 * 1000;
+
+/**
+ * Mantem o contador do menu honesto sem recalcular tudo a cada requisicao:
+ * os alertas sao sincronizados no maximo uma vez a cada cinco minutos por
+ * empresa. Falha aqui nunca derruba a tela.
+ */
+export async function sincronizarAlertasSeNecessario(contexto: Contexto): Promise<void> {
+  if (contexto.usuario.ehSuperAdmin) return;
+  try {
+    const parametros = await lerParametros(contexto.empresaId);
+    const ultima = Date.parse(parametros.get(CHAVE_ULTIMA_SINCRONIZACAO) ?? '');
+    if (Number.isFinite(ultima) && agora().getTime() - ultima < INTERVALO_SINCRONIZACAO_MS) return;
+
+    // Marca antes de sincronizar: requisicoes simultaneas nao repetem o trabalho.
+    await gravarParametro(contexto.empresaId, CHAVE_ULTIMA_SINCRONIZACAO, agora().toISOString());
+    await sincronizarAlertas(contexto);
+  } catch (excecao) {
+    console.error('[esteticaflow] falha ao sincronizar alertas:', excecao);
+  }
+}
+
 export async function listarNotificacoes(
   contexto: Contexto,
 ): Promise<Result<NotificacaoDaLista[]>> {
   await sincronizarAlertas(contexto);
+  if (!contexto.usuario.ehSuperAdmin) {
+    await gravarParametro(contexto.empresaId, CHAVE_ULTIMA_SINCRONIZACAO, agora().toISOString());
+  }
 
   const escopo = contexto.usuario.ehSuperAdmin
     ? isNull(notificacao.empresaId)
