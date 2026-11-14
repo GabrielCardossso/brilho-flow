@@ -5,7 +5,8 @@ import { z } from 'zod';
  * derruba a aplicacao imediatamente, em vez de falhar no meio de um request.
  */
 const serverEnvSchema = z.object({
-  DATABASE_URL: z.string().url('DATABASE_URL deve ser uma URL de conexao valida.'),
+  // Opcional: na Cloudflare a conexao vem do binding do Hyperdrive.
+  DATABASE_URL: z.string().url('DATABASE_URL deve ser uma URL de conexao valida.').optional(),
   SESSION_SECRET: z
     .string()
     .min(32, 'SESSION_SECRET deve ter no minimo 32 caracteres.'),

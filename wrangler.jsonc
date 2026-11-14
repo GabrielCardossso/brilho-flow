@@ -1,0 +1,21 @@
+{
+  // Worker do Brilhoflow na Cloudflare (Next.js via OpenNext).
+  // Antes do primeiro deploy, troque o id do Hyperdrive pelo criado na sua conta.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brilhoflow",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // Pooler de conexões da Cloudflare, na frente do Postgres do Supabase.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "TROQUE-PELO-ID-DO-HYPERDRIVE"
+    }
+  ]
+}

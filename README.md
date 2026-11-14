@@ -44,16 +44,17 @@ yarn db:seed        # cria o admin da plataforma e uma empresa de demonstração
 yarn dev            # http://localhost:3000
 ```
 
-O seed cria duas contas:
+O seed cria a plataforma e **duas empresas de demonstração**, uma em cada plano:
 
 | Conta | Perfil | Senha | Para quê |
 | --- | --- | --- | --- |
 | valor de `SEED_SUPER_ADMIN_EMAIL` | Administrador da plataforma | `SEED_SUPER_ADMIN_SENHA` | Console de empresas, assinaturas e auditoria |
-| `demo@lumenauto.com.br` | Administrador da empresa demo (Lumen Auto Studio) | `SEED_DEMO_SENHA`, ou uma senha aleatória impressa no terminal ao final do seed | Operação completa com seis meses de dados de exemplo |
+| `demo@lumenauto.com.br` | Administrador da demo **Pro** (Lumen Auto Studio, 5 usuários) | `SEED_DEMO_SENHA`, ou uma senha aleatória impressa no terminal ao final do seed | Produto inteiro, com seis meses de dados e atendimentos de hoje em todas as etapas do quadro |
+| `demo.basico@brilhoexpress.com.br` | Administrador da demo **Básica** (Brilho Express Estética, 2 usuários) | `SEED_DEMO_BASICO_SENHA`, ou aleatória | Só os módulos do plano; estoque e financeiro ficam escondidos. Trocando o plano para Pro na aba Plataforma, eles aparecem (o "upgrade" da demonstração) |
 
 - Nenhuma senha fica fixa no repositório.
 - Em `NODE_ENV=production` a empresa demo **não** é criada, a menos que `SEED_DEMO=true`.
-- O seed é idempotente. `SEED_DEMO_RECRIAR=true` apaga e recria apenas a empresa demo.
+- O seed é idempotente. `SEED_DEMO_RECRIAR=true` apaga e recria apenas as empresas demo. Refaça antes de cada demonstração: os atendimentos "de hoje" são gerados no momento do seed.
 
 ---
 
@@ -63,7 +64,7 @@ Validadas por Zod no boot (`src/env.ts`). Ausência ou formato inválido derruba
 
 | Variável | Obrigatória | Descrição |
 | --- | :-: | --- |
-| `DATABASE_URL` | ✅ | Conexão PostgreSQL. Em produção, use o endpoint do **pooler** |
+| `DATABASE_URL` | ✅ (Node) | Conexão PostgreSQL. Em produção, use o endpoint do **pooler**. Na Cloudflare é opcional: a conexão vem do binding `HYPERDRIVE` |
 | `SESSION_SECRET` | ✅ | Segredo de assinatura do cookie de sessão. Mínimo de 32 caracteres |
 | `NEXT_PUBLIC_APP_URL` | — | URL pública. Padrão: `http://localhost:3000` |
 | `DATABASE_POOL_MAX` | — | Conexões por instância (1 a 20). Padrão: 4 em produção, 5 em desenvolvimento |
@@ -71,9 +72,10 @@ Validadas por Zod no boot (`src/env.ts`). Ausência ou formato inválido derruba
 | `SEED_SUPER_ADMIN_EMAIL` | seed | E-mail do administrador da plataforma |
 | `SEED_SUPER_ADMIN_SENHA` | seed | Senha inicial — troque após o primeiro acesso |
 | `SEED_SUPER_ADMIN_NOME` | seed | Nome de exibição |
-| `SEED_DEMO_SENHA` | — | Senha do usuário demo. Sem ela, o seed gera uma aleatória |
+| `SEED_DEMO_SENHA` | — | Senha do usuário da demo Pro. Sem ela, o seed gera uma aleatória |
+| `SEED_DEMO_BASICO_SENHA` | — | Senha do usuário da demo Básica. Sem ela, o seed gera uma aleatória |
 | `SEED_DEMO` | — | `true` para criar a empresa demo em produção |
-| `SEED_DEMO_RECRIAR` | — | `true` para apagar e recriar a empresa demo |
+| `SEED_DEMO_RECRIAR` | — | `true` para apagar e recriar as empresas demo |
 
 Nenhum segredo é versionado. `.env*` está no `.gitignore`.
 
@@ -237,6 +239,20 @@ Preparado para **Vercel**. Todas as rotas de API declaram `runtime = 'nodejs'`.
 1. Configure `DATABASE_URL` (endpoint do **pooler**, não o direto), `SESSION_SECRET` e `NEXT_PUBLIC_APP_URL`.
 2. Rode `yarn db:migrate` no passo de deploy ou manualmente antes de publicar.
 3. Rode `yarn db:seed` uma única vez, no primeiro deploy.
+
+### Cloudflare Workers (OpenNext)
+
+O projeto também roda em **Cloudflare Workers** com o adaptador [OpenNext](https://opennext.js.org/cloudflare). Passo a passo completo em [docs/plano-deploy-cloudflare-supabase.md](docs/plano-deploy-cloudflare-supabase.md). Resumo do que existe no repositório:
+
+- `wrangler.jsonc`: Worker, flag `nodejs_compat` e binding `HYPERDRIVE` (troque o id pelo da sua conta).
+- `open-next.config.ts` e os scripts `cf:build`, `cf:preview` e `cf:deploy`.
+- `src/db/client.ts`: fora da Cloudflare mantém uma conexão por instância; na Cloudflare cria **uma conexão por requisição**, ligada ao Hyperdrive (Workers não reaproveitam conexões entre requisições).
+- Relatórios: o PDF é desenhado com `pdf-lib` e a planilha usa a versão "navegador" do ExcelJS, porque o renderizador anterior de PDF compilava WebAssembly em tempo de execução, o que Workers não permite.
+- Segredos do Worker (`SESSION_SECRET`) vão no painel da Cloudflare; para testar localmente copie `.dev.vars.example` para `.dev.vars`.
+- O build de produção na Cloudflare roda em Linux. No Windows funciona se `yarn` estiver no PATH.
+- O pacote do Worker fica por volta de 2,5 MiB compactado (limite do plano gratuito: 3 MiB; plano pago: 10 MiB).
+
+### Servidor Node ou Vercel
 
 Se estiver atrás de PgBouncer em modo *transaction*, o driver já vai com `prepare: false`. O pool é de **4 conexões por instância** em produção (`DATABASE_POOL_MAX` ajusta, de 1 a 20): com 1 conexão, as consultas paralelas de uma tela rodavam em fila. Se o plano do banco limitar conexões, reduza.
 
