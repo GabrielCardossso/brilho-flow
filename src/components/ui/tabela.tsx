@@ -1,9 +1,66 @@
-import type { HTMLAttributes, ReactNode, ThHTMLAttributes, TdHTMLAttributes } from 'react';
+'use client';
+
+import {
+  useEffect,
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+  type ThHTMLAttributes,
+  type TdHTMLAttributes,
+} from 'react';
 import { cn } from '@/lib/utils';
 
+/** Altura da barra fixa do topo do painel: a tabela só conta como "inteira" abaixo dela. */
+const ALTURA_DA_BARRA_DO_TOPO = 68;
+
+/**
+ * A rolagem de dentro da tabela só é liberada quando o card inteiro está à vista.
+ * Antes disso a roda do mouse (ou o dedo) rola a página até a tabela aparecer por
+ * completo; quando as linhas chegam ao fim, a rolagem segue para a página.
+ */
 export function Tabela({ className, ...resto }: HTMLAttributes<HTMLTableElement>) {
+  const raiz = useRef<HTMLDivElement>(null);
+  const [liberada, setLiberada] = useState(false);
+
+  useEffect(() => {
+    const elemento = raiz.current;
+    if (elemento === null) return;
+    let quadro = 0;
+
+    const avaliar = () => {
+      quadro = 0;
+      const limites = elemento.getBoundingClientRect();
+      setLiberada(
+        limites.top >= ALTURA_DA_BARRA_DO_TOPO - 2 && limites.bottom <= window.innerHeight + 2,
+      );
+    };
+    const agendar = () => {
+      if (quadro === 0) quadro = requestAnimationFrame(avaliar);
+    };
+
+    avaliar();
+    window.addEventListener('scroll', agendar, { passive: true });
+    window.addEventListener('resize', agendar);
+    const observador = new ResizeObserver(agendar);
+    observador.observe(elemento);
+    return () => {
+      window.removeEventListener('scroll', agendar);
+      window.removeEventListener('resize', agendar);
+      observador.disconnect();
+      if (quadro !== 0) cancelAnimationFrame(quadro);
+    };
+  }, []);
+
   return (
-    <div className="w-full max-h-[calc(100dvh-13rem)] overflow-auto rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+    <div
+      ref={raiz}
+      data-rolagem-liberada={liberada}
+      className={cn(
+        'max-h-[calc(100dvh-13rem)] w-full overflow-x-auto rounded-[inherit] overscroll-x-contain [-webkit-overflow-scrolling:touch]',
+        liberada ? 'overflow-y-auto' : 'overflow-y-hidden',
+      )}
+    >
       <table className={cn('w-full border-collapse text-sm', className)} {...resto} />
     </div>
   );
