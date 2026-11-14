@@ -32,4 +32,12 @@ CREATE UNIQUE INDEX "uq_receita_parcela" ON "receita" USING btree ("parcela_rece
 --> statement-breakpoint
 ALTER TABLE "parcela_recebimento" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
-REVOKE ALL ON TABLE "parcela_recebimento" FROM anon, authenticated;
+DO $$
+DECLARE papel text;
+BEGIN
+  FOREACH papel IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = papel) THEN
+      EXECUTE format('REVOKE ALL ON TABLE "parcela_recebimento" FROM %I', papel);
+    END IF;
+  END LOOP;
+END $$;

@@ -54,8 +54,18 @@ END $$;
 
 -- A aplicacao usa conexao de servidor. A Data API publica nao deve ter acesso
 -- direto aos dados de empresas; RLS tambem fornece defesa em profundidade.
-REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
-REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+-- Os papeis anon/authenticated existem so no Supabase; em Postgres comum a
+-- revogacao e ignorada em vez de abortar a migration.
+DO $$
+DECLARE papel text;
+BEGIN
+  FOREACH papel IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = papel) THEN
+      EXECUTE format('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM %I', papel);
+      EXECUTE format('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM %I', papel);
+    END IF;
+  END LOOP;
+END $$;
 
 ALTER TABLE configuracao ENABLE ROW LEVEL SECURITY;
 ALTER TABLE empresa ENABLE ROW LEVEL SECURITY;

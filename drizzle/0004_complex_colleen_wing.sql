@@ -11,4 +11,12 @@ CREATE INDEX "ix_controle_rate_limit_atualizado" ON "controle_rate_limit" USING 
 --> statement-breakpoint
 ALTER TABLE "controle_rate_limit" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
-REVOKE ALL ON TABLE "controle_rate_limit" FROM anon, authenticated;
+DO $$
+DECLARE papel text;
+BEGIN
+  FOREACH papel IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = papel) THEN
+      EXECUTE format('REVOKE ALL ON TABLE "controle_rate_limit" FROM %I', papel);
+    END IF;
+  END LOOP;
+END $$;
