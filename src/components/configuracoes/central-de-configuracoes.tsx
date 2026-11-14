@@ -185,7 +185,7 @@ export function CentralDeConfiguracoes() {
     },
     onSuccess: () => {
       invalidar();
-      toast.success('Solicitação enviada à EsteticaFlow.');
+      toast.success('Solicitação enviada ao Brilhoflow.');
       setEmpresaAberta(false);
     },
     onError: (erro) => toast.error(mensagemDeErro(erro)),
@@ -269,7 +269,7 @@ export function CentralDeConfiguracoes() {
         <Cartao destaque>
           <CartaoCabecalho
             titulo="Dados da empresa"
-            descricao="Alterações passam por conferência da EsteticaFlow"
+            descricao="Alterações passam por conferência do Brilhoflow"
             acao={
               ehAdministrador ? (
                 <Botao
@@ -358,7 +358,7 @@ export function CentralDeConfiguracoes() {
             </dl>
 
             <p className="text-xs text-[var(--tinta-tenue)]">
-              {plano.descricao} A troca de plano é feita pela EsteticaFlow e preserva todo o
+              {plano.descricao} A troca de plano é feita pelo Brilhoflow e preserva todo o
               histórico.
             </p>
           </CartaoCorpo>
@@ -697,7 +697,7 @@ export function CentralDeConfiguracoes() {
         aberto={empresaAberta}
         aoMudar={setEmpresaAberta}
         titulo="Solicitar alteração cadastral"
-        descricao="Como são dados fiscais, a EsteticaFlow confere antes de aplicar."
+        descricao="Como são dados fiscais, o Brilhoflow confere antes de aplicar."
         rodape={
           <>
             <Botao variante="fantasma" onClick={() => setEmpresaAberta(false)}>

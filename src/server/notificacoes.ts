@@ -213,10 +213,13 @@ const INTERVALO_SINCRONIZACAO_MS = 5 * 60 * 1000;
  * os alertas sao sincronizados no maximo uma vez a cada cinco minutos por
  * empresa. Falha aqui nunca derruba a tela.
  */
-export async function sincronizarAlertasSeNecessario(contexto: Contexto): Promise<void> {
+export async function sincronizarAlertasSeNecessario(
+  contexto: Contexto,
+  parametrosLidos?: Map<string, string>,
+): Promise<void> {
   if (contexto.usuario.ehSuperAdmin) return;
   try {
-    const parametros = await lerParametros(contexto.empresaId);
+    const parametros = parametrosLidos ?? (await lerParametros(contexto.empresaId));
     const ultima = Date.parse(parametros.get(CHAVE_ULTIMA_SINCRONIZACAO) ?? '');
     if (Number.isFinite(ultima) && agora().getTime() - ultima < INTERVALO_SINCRONIZACAO_MS) return;
 

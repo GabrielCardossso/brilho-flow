@@ -24,11 +24,11 @@ const FORMATO_MOEDA = 'R$ #,##0.00';
 /** Gera o relatorio gerencial em XLSX, com uma aba por dimensao. */
 export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
   const arquivo = new ExcelJS.Workbook();
-  arquivo.creator = 'EsteticaFlow';
+  arquivo.creator = 'Brilhoflow';
   arquivo.created = new Date();
 
   const resumo = arquivo.addWorksheet('Resumo');
-  resumo.addRow(['EsteticaFlow — Relatório gerencial']).font = { bold: true, size: 14 };
+  resumo.addRow(['Brilhoflow — Relatório gerencial']).font = { bold: true, size: 14 };
   resumo.addRow([]);
   resumo.addRow(['Empresa', relatorio.empresa]);
   resumo.addRow(['Plano', CATALOGO_PLANOS[relatorio.plano].nome]);

@@ -71,7 +71,7 @@ function decimal(valor: number): string {
 }
 
 async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>): Promise<void> {
-  const emailAdmin = exigir('SEED_SUPER_ADMIN_EMAIL', 'admin@esteticaflow.com.br').toLowerCase();
+  const emailAdmin = exigir('SEED_SUPER_ADMIN_EMAIL', 'admin@brilhoflow.com.br').toLowerCase();
   const [plataformaExistente] = await db
     .select({ id: empresa.id })
     .from(empresa)
@@ -88,8 +88,8 @@ async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>)
     const [plataforma] = await tx
       .insert(empresa)
       .values({
-        razaoSocial: 'EsteticaFlow Tecnologia Ltda',
-        nomeFantasia: 'EsteticaFlow',
+        razaoSocial: 'Brilhoflow Tecnologia Ltda',
+        nomeFantasia: 'Brilhoflow',
         cnpj: '19131243000197',
         email: emailAdmin,
         plano: 'COMPLETO',
@@ -111,7 +111,7 @@ async function garantirPlataforma(db: ReturnType<typeof drizzle<typeof schema>>)
     await tx.insert(configuracao).values([
       { empresaId: plataforma.id, chave: 'tema.cor', valor: ACENTO_PADRAO },
       { empresaId: plataforma.id, chave: 'tema.cor.hex', valor: HEX_PADRAO },
-      { empresaId: plataforma.id, chave: 'tema.modo', valor: 'escuro' },
+      { empresaId: plataforma.id, chave: 'tema.modo', valor: 'claro' },
       { empresaId: plataforma.id, chave: 'sessao.inatividade.ativa', valor: 'false' },
       { empresaId: plataforma.id, chave: 'sessao.inatividade.minutos', valor: '30' },
     ]);
@@ -200,7 +200,7 @@ async function criarDemonstracao(
     await tx.insert(configuracao).values([
       { empresaId: demo.id, chave: 'tema.cor', valor: 'turbina' },
       { empresaId: demo.id, chave: 'tema.cor.hex', valor: '#06b6d4' },
-      { empresaId: demo.id, chave: 'tema.modo', valor: 'escuro' },
+      { empresaId: demo.id, chave: 'tema.modo', valor: 'claro' },
       { empresaId: demo.id, chave: 'sessao.inatividade.ativa', valor: 'false' },
       { empresaId: demo.id, chave: 'sessao.inatividade.minutos', valor: '30' },
     ]);

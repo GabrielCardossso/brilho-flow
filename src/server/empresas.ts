@@ -25,7 +25,7 @@ import {
 import { conflito, falha, naoEncontrado, ok, type Result } from '@/domain/result';
 import { adicionarMeses, hojeISO, m, paraISO } from '@/domain/shared/tempo';
 import { contemTermo } from '@/domain/shared/texto';
-import { CHAVE_SESSAO_ATIVA, CHAVE_SESSAO_MINUTOS, CHAVE_TEMA_COR, CHAVE_TEMA_HEX, CHAVE_TEMA_MODO, ACENTO_PADRAO, HEX_PADRAO } from '@/domain/tema';
+import { CHAVE_SESSAO_ATIVA, CHAVE_SESSAO_MINUTOS, CHAVE_TEMA_COR, CHAVE_TEMA_HEX, CHAVE_TEMA_MODO, ACENTO_PADRAO, HEX_PADRAO, MODO_PADRAO } from '@/domain/tema';
 import type {
   AssinaturaPayload,
   BloqueioInput,
@@ -177,7 +177,7 @@ export async function criarEmpresa(
     await tx.insert(configuracao).values([
       { empresaId: nova.id, chave: CHAVE_TEMA_COR, valor: ACENTO_PADRAO },
       { empresaId: nova.id, chave: CHAVE_TEMA_HEX, valor: HEX_PADRAO },
-      { empresaId: nova.id, chave: CHAVE_TEMA_MODO, valor: 'escuro' },
+      { empresaId: nova.id, chave: CHAVE_TEMA_MODO, valor: MODO_PADRAO },
       { empresaId: nova.id, chave: CHAVE_SESSAO_ATIVA, valor: 'false' },
       { empresaId: nova.id, chave: CHAVE_SESSAO_MINUTOS, valor: '30' },
     ]);
@@ -526,7 +526,7 @@ export async function decidirSolicitacao(
         status: aprovar ? 'APROVADA' : 'REJEITADA',
         decididoPor: contexto.usuario.usuarioId,
         decididoEm: new Date(),
-        motivo: aprovar ? null : (motivo ?? 'Solicitação rejeitada pela EsteticaFlow.'),
+        motivo: aprovar ? null : (motivo ?? 'Solicitação rejeitada pelo Brilhoflow.'),
       })
       .where(eq(solicitacaoAlteracaoEmpresa.id, id));
 
@@ -547,8 +547,8 @@ export async function decidirSolicitacao(
     tipo: 'SOLICITACAO_DECISAO',
     titulo: aprovar ? 'Alteração cadastral aprovada' : 'Alteração cadastral rejeitada',
     mensagem: aprovar
-      ? 'A EsteticaFlow aprovou a alteração dos dados cadastrais da empresa.'
-      : `A EsteticaFlow rejeitou a alteração. Motivo: ${motivo ?? 'não informado'}.`,
+      ? 'O Brilhoflow aprovou a alteração dos dados cadastrais da empresa.'
+      : `O Brilhoflow rejeitou a alteração. Motivo: ${motivo ?? 'não informado'}.`,
     referenciaTipo: 'SOLICITACAO_DECISAO',
     referenciaId: id,
     acaoUrl: '/painel/notificacoes',

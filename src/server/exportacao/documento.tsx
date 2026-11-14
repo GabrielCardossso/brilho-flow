@@ -108,13 +108,13 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
 
   return (
     <Document
-      title={`Relatório EsteticaFlow — ${relatorio.empresa}`}
-      author="EsteticaFlow"
+      title={`Relatório Brilhoflow — ${relatorio.empresa}`}
+      author="Brilhoflow"
       language="pt-BR"
     >
       <Page size="A4" orientation="landscape" style={estilos.pagina}>
         <View style={estilos.faixaTopo}>
-          <Text style={estilos.marca}>EsteticaFlow · Relatório gerencial</Text>
+          <Text style={estilos.marca}>Brilhoflow · Relatório gerencial</Text>
           <Text style={estilos.subtitulo}>
             {relatorio.empresa} · Plano {CATALOGO_PLANOS[relatorio.plano].nome} ·{' '}
             {relatorio.filtroRotulo} · {periodo}
@@ -205,7 +205,7 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
         <Text
           style={estilos.rodape}
           render={({ pageNumber, totalPages }) =>
-            `EsteticaFlow · gerado em ${formatarData(new Date())} · página ${pageNumber} de ${totalPages}`
+            `Brilhoflow · gerado em ${formatarData(new Date())} · página ${pageNumber} de ${totalPages}`
           }
           fixed
         />

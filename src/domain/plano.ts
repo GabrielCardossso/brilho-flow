@@ -160,7 +160,7 @@ export function podeAcessar(situacao: SituacaoAssinatura): boolean {
 }
 
 export function motivoDoBloqueio(situacao: SituacaoAssinatura): string | null {
-  if (!situacao.ativo) return 'A empresa está inativa. Fale com a EsteticaFlow.';
+  if (!situacao.ativo) return 'A empresa está inativa. Fale com o Brilhoflow.';
   if (situacao.status === 'CANCELADA') return 'A assinatura desta empresa foi cancelada.';
   if (situacao.status === 'BLOQUEADA') {
     return 'O acesso está bloqueado por pendência na assinatura.';
