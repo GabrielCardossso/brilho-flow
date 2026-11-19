@@ -1,8 +1,6 @@
-# Brilhoflow
+<img src="./.github/readme/header.svg" width="100%" alt="brilho-flow: Projeto pessoal · ERP SaaS" />
 
-**ERP/SaaS de gestão para empresas de estética automotiva.** Agenda, clientes, veículos, catálogo de serviços, estoque, financeiro e relatórios em um único painel, com isolamento multiempresa e planos de assinatura.
-
-Construído em Next.js 15 (App Router), TypeScript estrito, PostgreSQL e Drizzle ORM.
+<img src="./.github/readme/sobre.svg" width="100%" alt="Sobre o projeto: ERP/SaaS de gestão para empresas de estética automotiva: agenda, clientes, veículos, catálogo de serviços, estoque, financeiro e relatórios num único painel, com isolamento multiempresa e planos de assinatura." />
 
 ---
 
