@@ -2,23 +2,13 @@
 
 <img src="./.github/readme/sobre.svg" width="100%" alt="Sobre o projeto: ERP/SaaS de gestão para empresas de estética automotiva: agenda, clientes, veículos, catálogo de serviços, estoque, financeiro e relatórios num único painel, com isolamento multiempresa e planos de assinatura." />
 
----
+<img src="./.github/readme/stack.svg" width="100%" alt="Stack: Next.js 15, React 19, TypeScript, Tailwind CSS 4, Radix UI, React Query, PostgreSQL, Drizzle ORM, Zod, moment-timezone, jose (JWT), bcrypt, pdf-lib, ExcelJS, Recharts, Vitest, ESLint, Prettier, Vercel, Cloudflare, Supabase" />
 
-## Sumário
+<img src="./.github/readme/funcionalidades.svg" width="100%" alt="Funcionalidades: Agenda e atendimentos (Conflito de horário, máquina de estados e Quadro do dia com sete etapas, avançando por botão ou arrastando.); Clientes e veículos (Cadastro com classificação de relacionamento e a placa Mercosul como identificador do veículo.); Estoque (Custo por embalagem, níveis de estoque e baixa validada no consumo de produtos do atendimento.); Financeiro (Receitas, despesas e parcelamento em até 12x sem perder centavos (dinheiro em BigInt).); Planos de assinatura (Matriz plano × recurso: o plano Básico esconde estoque e financeiro; o Pro libera tudo.); Relatórios (Períodos e indicadores, com exportação em PDF e planilha.); Console da plataforma (Administração de empresas, assinaturas e trilha de auditoria.); Multiempresa (Cada empresa só enxerga os próprios dados: o empresaId vem sempre da sessão assinada.)" />
 
-- [Como rodar](#como-rodar)
-- [Variáveis de ambiente](#variáveis-de-ambiente)
-- [Scripts](#scripts)
-- [Arquitetura](#arquitetura)
-- [Decisões e trade-offs](#decisões-e-trade-offs)
-- [Modelo de dados](#modelo-de-dados)
-- [Segurança](#segurança)
-- [Deploy](#deploy)
-- [Verificação](#verificação)
+<img src="./.github/readme/estrutura.svg" width="100%" alt="Estrutura de pastas: src/ (código da aplicação), app/ (rotas (App Router) e API REST), domain/ (regras de negócio, funções puras), server/ (orquestração: transação e domínio), db/ (schema Drizzle, migrate e seed), auth/ (sessão, senha e guards), components/ (design system e telas), drizzle/ (migrations SQL versionadas), tests/ (testes do domínio (Vitest)), docs/ (plano de deploy na Cloudflare), REQUISITOS.md (casos de uso e regras de negócio), wrangler.jsonc (configuração do Worker)" />
 
----
-
-## Como rodar
+<img src="./.github/readme/secao-01-como-rodar.svg" width="100%" alt="Como rodar" />
 
 Pré-requisitos: **Node 20+** e um **PostgreSQL 14+** acessível.
 
@@ -36,11 +26,13 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 # 3. Banco
 yarn db:migrate     # aplica o schema (Postgres comum ou Supabase)
-yarn db:seed        # cria o admin da plataforma e uma empresa de demonstração
+yarn db:seed        # cria o admin da plataforma e as empresas de demonstração
 
 # 4. Desenvolvimento
 yarn dev            # http://localhost:3000
 ```
+
+### Contas criadas pelo seed
 
 O seed cria a plataforma e **duas empresas de demonstração**, uma em cada plano:
 
@@ -54,11 +46,9 @@ O seed cria a plataforma e **duas empresas de demonstração**, uma em cada plan
 - Em `NODE_ENV=production` a empresa demo **não** é criada, a menos que `SEED_DEMO=true`.
 - O seed é idempotente. `SEED_DEMO_RECRIAR=true` apaga e recria apenas as empresas demo. Refaça antes de cada demonstração: os atendimentos "de hoje" são gerados no momento do seed.
 
----
+<img src="./.github/readme/secao-02-variaveis-de-ambiente.svg" width="100%" alt="Variáveis de ambiente" />
 
-## Variáveis de ambiente
-
-Validadas por Zod no boot (`src/env.ts`). Ausência ou formato inválido derruba a aplicação imediatamente, em vez de falhar no meio de uma requisição.
+Validadas por Zod no boot ([`src/env.ts`](src/env.ts)). Ausência ou formato inválido derruba a aplicação imediatamente, em vez de falhar no meio de uma requisição. Modelos: [`.env.example`](.env.example) e, para o Worker, [`.dev.vars.example`](.dev.vars.example).
 
 | Variável | Obrigatória | Descrição |
 | --- | :-: | --- |
@@ -77,9 +67,7 @@ Validadas por Zod no boot (`src/env.ts`). Ausência ou formato inválido derruba
 
 Nenhum segredo é versionado. `.env*` está no `.gitignore`.
 
----
-
-## Scripts
+<img src="./.github/readme/secao-03-scripts.svg" width="100%" alt="Scripts" />
 
 | Comando | O que faz |
 | --- | --- |
@@ -88,17 +76,19 @@ Nenhum segredo é versionado. `.env*` está no `.gitignore`.
 | `yarn start` | Servidor de produção |
 | `yarn typecheck` | `tsc --noEmit` |
 | `yarn lint` | ESLint |
-| `yarn test` | Testes do domínio (Vitest) |
+| `yarn format` | Prettier (`yarn format:check` só confere) |
+| `yarn test` | Testes do domínio (Vitest); `yarn test:watch` em modo observação |
 | `yarn verify` | Typecheck + lint + testes |
 | `yarn db:generate` | Gera migration a partir do schema |
 | `yarn db:migrate` | Aplica migrations pendentes |
+| `yarn db:push` | Envia o schema direto ao banco (drizzle-kit) |
 | `yarn db:seed` | Popula o ambiente |
 | `yarn db:studio` | Interface visual do banco |
-| `yarn format` | Prettier |
+| `yarn cf:build` | Build para Cloudflare Workers (OpenNext) |
+| `yarn cf:preview` | Build + prévia local do Worker |
+| `yarn cf:deploy` | Build + deploy na Cloudflare |
 
----
-
-## Arquitetura
+<img src="./.github/readme/secao-04-arquitetura.svg" width="100%" alt="Arquitetura" />
 
 ```
 src/
@@ -155,44 +145,47 @@ Drizzle (transação quando há mais de uma escrita)
 Trilha de auditoria (nunca derruba a operação principal)
 ```
 
----
-
-## Decisões e trade-offs
+<img src="./.github/readme/secao-05-decisoes.svg" width="100%" alt="Decisões e trade-offs" />
 
 ### Por que Drizzle e não Prisma
+
 O schema depende de recursos que o Prisma abstrai mal: *check constraints* compostas, índices únicos **parciais** (uma solicitação pendente por empresa; uma receita por atendimento) e `SELECT ... FOR UPDATE`. Drizzle mantém o SQL visível e não carrega engine binário — cold start menor em ambiente serverless.
 **Trade-off:** menos maturidade em migrations complexas; menos ferramental pronto.
 
 ### Por que sessão própria e não Auth.js
+
 O modelo de autorização é perfil + plano + revalidação da assinatura **a cada requisição**. Encaixar isso nos adapters do Auth.js exigiria contorná-los. Um login por credenciais com cookie assinado (`jose`) são ~120 linhas e reproduzem o comportamento exigido.
 **Trade-off:** provedores OAuth exigiriam trabalho adicional. Não estão no escopo.
 
 ### Por que API REST e não Server Actions
+
 A interface é orientada a dados que mudam com frequência (agenda, saldo, financeiro). React Query dá cache, invalidação por chave, revalidação em foco e estado de carregamento sem esforço. Uma API REST explícita torna isso natural e mantém a superfície testável independentemente da UI.
 **Trade-off:** mais arquivos que Server Actions e um salto de rede a mais no primeiro carregamento.
 
 ### Por que `BigInt` para dinheiro
+
 `0.1 + 0.2 !== 0.3`. Em sistema financeiro isso vira centavo perdido em relatório. Valores circulam como string decimal e toda conta acontece em inteiros escalados, com arredondamento HALF_UP.
 **Trade-off:** conversão na fronteira e código de aritmética mais verboso.
 *Um teste desta suíte pegou um bug real de conversão de escala no custo unitário.*
 
 ### Por que `moment-timezone`
+
 A operação inteira vive em `America/Sao_Paulo`. Um único módulo (`domain/shared/tempo.ts`) concentra "agora", "hoje" e formatação, e nenhum outro arquivo chama `new Date()` para decidir regra.
 **Trade-off:** `moment` está em manutenção e é mais pesado que alternativas modernas. Foi requisito explícito do projeto e está isolado atrás de um módulo — trocar por `date-fns-tz` ou `Temporal` mexe em um arquivo só.
 
 ### Por que fontes em runtime e não `next/font`
+
 `next/font` baixa os arquivos **durante o build**. Em ambiente de CI sem acesso ao Google Fonts, o build quebra. As fontes são carregadas pelo navegador com `display=swap` e pilha de fallback do sistema.
 **Trade-off:** um salto de rede no primeiro carregamento e possível FOUT.
 
 ### Por que responsável = usuário
+
 Existia uma tabela de funcionários sem nenhuma tela de cadastro: o seletor de responsável na agenda ficaria permanentemente vazio. O responsável passou a ser um **usuário ativo da empresa**, e o recurso funciona de ponta a ponta sem um CRUD a mais.
 **Trade-off:** não há campos de RH (CPF, admissão, comissão). Nenhum deles era usado.
 
----
+<img src="./.github/readme/secao-06-modelo-de-dados.svg" width="100%" alt="Modelo de dados" />
 
-## Modelo de dados
-
-23 tabelas, todas com `empresa_id` (exceto `empresa`, `controle_rate_limit` e `sessao_revogada`) e auditoria de criação/atualização.
+23 tabelas, todas com `empresa_id` (exceto `empresa`, `controle_rate_limit` e `sessao_revogada`) e auditoria de criação/atualização. As migrations ficam em [`drizzle/`](drizzle).
 
 | Área | Tabelas |
 | --- | --- |
@@ -202,7 +195,7 @@ Existia uma tabela de funcionários sem nenhuma tela de cadastro: o seletor de r
 | Financeiro | `forma_pagamento`, `receita`, `parcela_recebimento`, `despesa` |
 | Plataforma | `log`, `historico_acesso`, `notificacao`, `controle_rate_limit`, `sessao_revogada` |
 
-Invariantes replicadas no banco, não só no código:
+### Invariantes replicadas no banco, não só no código
 
 - `agendamento`: `subtotal > 0`, `0 ≤ desconto < subtotal`, `total = subtotal − desconto`
 - `receita`: índice único parcial em `agendamento_id` (recebimentos à vista) e em `parcela_recebimento_id` — um atendimento não é pago duas vezes
@@ -211,9 +204,7 @@ Invariantes replicadas no banco, não só no código:
 - `cliente`: índice único parcial em `(empresa_id, cpf_cnpj) WHERE cpf_cnpj IS NOT NULL`
 - Formato de CNPJ, telefone, CEP e placa validado por *check constraint*
 
----
-
-## Segurança
+<img src="./.github/readme/secao-07-seguranca.svg" width="100%" alt="Segurança" />
 
 - **Sessão** em cookie `httpOnly`, `SameSite=Lax`, assinado com HS256; `Secure` em produção.
 - **Senha** com bcrypt custo 10.
@@ -228,9 +219,9 @@ Invariantes replicadas no banco, não só no código:
 - **Trilha de auditoria** por empresa e histórico de acesso por usuário.
 - **Segredos** apenas em variável de ambiente.
 
----
+<img src="./.github/readme/secao-08-deploy.svg" width="100%" alt="Deploy" />
 
-## Deploy
+### Vercel
 
 Preparado para **Vercel**. Todas as rotas de API declaram `runtime = 'nodejs'`.
 
@@ -240,23 +231,23 @@ Preparado para **Vercel**. Todas as rotas de API declaram `runtime = 'nodejs'`.
 
 ### Cloudflare Workers (OpenNext)
 
-O projeto também roda em **Cloudflare Workers** com o adaptador [OpenNext](https://opennext.js.org/cloudflare). Passo a passo completo em [docs/plano-deploy-cloudflare-supabase.md](docs/plano-deploy-cloudflare-supabase.md). Resumo do que existe no repositório:
+O projeto também roda em **Cloudflare Workers** com o adaptador [OpenNext](https://opennext.js.org/cloudflare). Passo a passo completo em [docs/plano-deploy-cloudflare-supabase.md](docs/plano-deploy-cloudflare-supabase.md). O que existe no repositório:
 
-- `wrangler.jsonc`: Worker, flag `nodejs_compat` e binding `HYPERDRIVE` (troque o id pelo da sua conta).
-- `open-next.config.ts` e os scripts `cf:build`, `cf:preview` e `cf:deploy`.
+- [`wrangler.jsonc`](wrangler.jsonc): Worker, flag `nodejs_compat` e binding `HYPERDRIVE` (troque o id pelo da sua conta).
+- [`open-next.config.ts`](open-next.config.ts) e os scripts `cf:build`, `cf:preview` e `cf:deploy`.
 - `src/db/client.ts`: fora da Cloudflare mantém uma conexão por instância; na Cloudflare cria **uma conexão por requisição**, ligada ao Hyperdrive (Workers não reaproveitam conexões entre requisições).
 - Relatórios: o PDF é desenhado com `pdf-lib` e a planilha usa a versão "navegador" do ExcelJS, porque o renderizador anterior de PDF compilava WebAssembly em tempo de execução, o que Workers não permite.
 - Segredos do Worker (`SESSION_SECRET`) vão no painel da Cloudflare; para testar localmente copie `.dev.vars.example` para `.dev.vars`.
 - O build de produção na Cloudflare roda em Linux. No Windows funciona se `yarn` estiver no PATH.
 - O pacote do Worker fica por volta de 2,5 MiB compactado (limite do plano gratuito: 3 MiB; plano pago: 10 MiB).
 
-### Servidor Node ou Vercel
+### Servidor Node ou Vercel: conexões
 
 Se estiver atrás de PgBouncer em modo *transaction*, o driver já vai com `prepare: false`. O pool é de **4 conexões por instância** em produção (`DATABASE_POOL_MAX` ajusta, de 1 a 20): com 1 conexão, as consultas paralelas de uma tela rodavam em fila. Se o plano do banco limitar conexões, reduza.
 
 ### Desempenho
 
-Medido em build de produção contra Postgres local (16 conexões simultâneas): ver a seção de medições abaixo. O que mudou:
+Medido em build de produção contra Postgres local (16 conexões simultâneas). O que mudou:
 
 - A cada requisição autenticada, usuário, empresa e revogação de sessão vêm em **uma** consulta (eram três).
 - O layout do painel lê os parâmetros da empresa uma vez e roda a sincronização de alertas **depois** da resposta (`after`).
@@ -264,19 +255,7 @@ Medido em build de produção contra Postgres local (16 conexões simultâneas):
 - O limite de requisições por IP no middleware subiu (leitura: 1500/min; escrita: 300/min), porque uma empresa inteira costuma sair pelo mesmo IP.
 - `yarn dev` recompila cada página na primeira visita e é **muito** mais lento que produção. Para medir tempo de resposta use `yarn build && yarn start`.
 
-## Identidade visual
-
-A ideia é **polimento**: o sistema tira os riscos da rotina. Escuro por padrão (pintura preta sob luz), com modo claro. Acento padrão **Azul**; a empresa com plano Pro escolhe o próprio. Tipografia: Bricolage Grotesque (títulos), Geist (texto) e Outfit (marca). A placa Mercosul é o identificador do veículo em todas as telas.
-
-- **Landing:** o painel aparece sob uma pintura riscada que o visitante poli com o mouse (canvas; botão "Revelar tudo" e movimento reduzido mostram direto o resultado).
-- **Painel:** o "chão da oficina" mostra um cartão por profissional com o carro que ele atende agora. O cronômetro conta desde o horário **agendado**, porque o sistema não guarda a hora real de início.
-- **Superfícies que refletem:** os cartões refletem a luz seguindo o mouse; botões principais se preenchem a partir do ponto em que o mouse entra.
-
-Todo movimento respeita `prefers-reduced-motion`.
-
----
-
-## Quadro do dia
+<img src="./.github/readme/secao-09-quadro-do-dia.svg" width="100%" alt="Quadro do dia" />
 
 Em Operação, o **Quadro do dia** mostra os atendimentos de hoje em sete etapas: Aguardando o carro, Na fila, Em andamento, Finalização, Revisão, Avisar o cliente e Entregue. Cada cartão avança com um botão ou arrastando.
 
@@ -284,18 +263,26 @@ Em Operação, o **Quadro do dia** mostra os atendimentos de hoje em sete etapas
 - Concluir **não** acontece arrastando: exige o consumo de produtos e o pagamento. O botão "Concluir atendimento" abre a conclusão de sempre.
 - Não se volta de status (iniciado não vira agendado, concluído não reabre). Dentro do mesmo status, vai-se e volta-se livremente.
 - Se o status muda por outro caminho (por exemplo, Iniciar na agenda), a etapa se ajusta sozinha. Cancelados não aparecem.
-- Persistência: coluna `etapa` em `agendamento` (migração 0006), nula significa a etapa inicial do status.
+- Persistência: coluna `etapa` em `agendamento` (migração `0006`), nula significa a etapa inicial do status.
 
----
+<img src="./.github/readme/secao-10-identidade-visual.svg" width="100%" alt="Identidade visual" />
 
-## Verificação
+A ideia é **polimento**: o sistema tira os riscos da rotina. Escuro por padrão (pintura preta sob luz), com modo claro. Acento padrão **Azul**; a empresa com plano Pro escolhe o próprio. Tipografia: Bricolage Grotesque (títulos), Geist (texto) e Outfit (marca). A placa Mercosul é o identificador do veículo em todas as telas.
+
+- **Landing:** o painel aparece sob uma pintura riscada que o visitante pole com o mouse (canvas; botão "Revelar tudo" e movimento reduzido mostram direto o resultado).
+- **Painel:** o "chão da oficina" mostra um cartão por profissional com o carro que ele atende agora. O cronômetro conta desde o horário **agendado**, porque o sistema não guarda a hora real de início.
+- **Superfícies que refletem:** os cartões refletem a luz seguindo o mouse; botões principais se preenchem a partir do ponto em que o mouse entra.
+
+Todo movimento respeita `prefers-reduced-motion`.
+
+<img src="./.github/readme/secao-11-verificacao.svg" width="100%" alt="Verificação" />
 
 ```bash
 yarn verify   # typecheck + lint + testes
 yarn build    # build de produção
 ```
 
-Estado atual desta entrega:
+Estado registrado na última entrega:
 
 | Verificação | Resultado |
 | --- | --- |
@@ -305,21 +292,23 @@ Estado atual desta entrega:
 | `next build` | ✅ 16 páginas + 65 rotas de API |
 | Java remanescente | ✅ nenhum arquivo |
 
-**Não verificado neste ambiente:** as migrations e o seed ainda não foram executados contra um PostgreSQL real, e as regras que dependem de banco (travas, transações, índices parciais) não têm teste automatizado — os testes cobrem o domínio puro e as validações. **Rode `yarn db:migrate` e `yarn db:seed` em uma base limpa antes de considerar o schema validado**, por exemplo:
+**Não verificado:** as migrations e o seed ainda não foram executados contra um PostgreSQL real, e as regras que dependem de banco (travas, transações, índices parciais) não têm teste automatizado — os testes cobrem o domínio puro e as validações. **Rode `yarn db:migrate` e `yarn db:seed` em uma base limpa antes de considerar o schema validado**, por exemplo:
 
 ```bash
 docker run -d --name esteticaflow-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=esteticaflow -p 5432:5432 postgres:16
 # .env: DATABASE_URL=postgresql://postgres:postgres@localhost:5432/esteticaflow
 yarn db:migrate && yarn db:seed
 ```
- Testes de integração com banco real (testcontainers) e e2e (Playwright) seguem como próximo passo.
 
----
+Testes de integração com banco real (testcontainers) e e2e (Playwright) seguem como próximo passo.
 
-## Documentação relacionada
+<img src="./.github/readme/secao-12-documentacao.svg" width="100%" alt="Documentação" />
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| [`REQUISITOS.md`](./REQUISITOS.md) | Atores, 78 casos de uso, 20 regras de negócio, requisitos não funcionais |
-| [`MIGRATION-MAP.md`](./MIGRATION-MAP.md) | Inventário do sistema Java de origem e o mapa da migração |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Arquitetura alvo e justificativa de cada dependência |
+| [`REQUISITOS.md`](REQUISITOS.md) | Atores, 78 casos de uso, 20 regras de negócio, requisitos não funcionais |
+| [`MIGRATION-MAP.md`](MIGRATION-MAP.md) | Inventário do sistema Java de origem e o mapa da migração |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Arquitetura alvo e justificativa de cada dependência |
+| [`docs/plano-deploy-cloudflare-supabase.md`](docs/plano-deploy-cloudflare-supabase.md) | Passo a passo do deploy na Cloudflare com Supabase |
+
+<a href="https://github.com/GabrielCardossso"><img src="./.github/readme/rodape.svg" width="100%" alt="Obrigado! Feito por Gabriel Cardoso" /></a>
